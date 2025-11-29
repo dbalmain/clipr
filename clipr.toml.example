@@ -1,0 +1,87 @@
+# Clipr Configuration File
+# Copy this file to ~/.config/clipr/clipr.toml and customize
+
+[general]
+# Maximum number of clipboard entries to keep in history
+max_history = 1000
+
+# Maximum image size in bytes (50MB default)
+max_image_size_bytes = 52428800
+
+# Image size threshold: <= this stored in memory, > saved to file
+max_image_memory_size_bytes = 5242880  # 5MB
+
+# Maximum image file size to show preview
+max_image_preview_size_bytes = 10485760  # 10MB
+
+# Exit TUI after selecting a clip (true) or stay open (false)
+exit_on_select = true
+
+# Enable debug logging (can also use RUST_LOG env var)
+debug_logging = false
+
+# Permanent Registers
+# Quick access to frequently used content
+# Keys: a-z, A-Z, 0-9 (62 total registers, CASE SENSITIVE)
+
+# Simple inline format (short content, single line)
+[permanent-registers]
+e = { content = "your.email@example.com" }
+E = { content = "work.email@company.com" }
+1 = { content = "https://docs.rs" }
+2 = { content = "https://github.com" }
+c = { content = "cargo build --release" }
+
+# Table format (recommended for entries with names/descriptions)
+[permanent-registers.g]
+name = "github"
+description = "GitHub profile URL"
+content = "https://github.com/yourusername"
+
+[permanent-registers.p]
+name = "phone"
+description = "Mobile phone number"
+content = "+1 (555) 123-4567"
+
+# Multiline content (email signature example)
+[permanent-registers.s]
+name = "signature"
+description = "Email signature block"
+content = """
+Best regards,
+Your Name
+Senior Developer
+https://yourwebsite.com"""
+
+# Code snippets with multiline content
+[permanent-registers.r]
+name = "rust_error_handling"
+description = "Rust error handling template"
+content = """
+use anyhow::{Context, Result};
+
+fn main() -> Result<()> {
+    do_something()
+        .context("Failed to do something")?;
+    Ok(())
+}"""
+
+# File-based registers (images, large text files)
+[permanent-registers.S]
+name = "signature_image"
+description = "Signature PNG for documents"
+file = "~/Images/signature.png"
+
+[permanent-registers.i]
+name = "icon"
+description = "Application icon"
+file = "~/Images/icon.png"
+mime_type = "image/png"  # Optional: override auto-detection
+
+# Notes:
+# - Simple entries: key = { content = "value" }
+# - Complex entries: [permanent-registers.key] with name/description/content fields
+# - File references: use 'file' instead of 'content'
+# - Tilde (~) expands to home directory
+# - Duplicate keys: last definition wins (warning shown)
+# - Missing files: warning shown on load

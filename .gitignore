@@ -1,0 +1,44 @@
+# Rust
+target/
+debug/
+release/
+*.rs.bk
+*.rlib
+*.prof*
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Build artifacts
+*.o
+*.so
+*.a
+*.exe
+*.dll
+
+# Test coverage
+*.profraw
+*.profdata
+lcov.info
+coverage/
+
+# Benchmarks
+benches/target/
