@@ -21,6 +21,8 @@ Cargo.lock
 .env
 .env.*
 !.env.example
+.envrc
+.direnv/
 
 # OS
 .DS_Store

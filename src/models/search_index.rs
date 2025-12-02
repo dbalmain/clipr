@@ -86,7 +86,7 @@ impl SearchIndex {
             })
             .collect();
 
-        // Sort by score descending (higher scores = better matches)
+        // Sort by score descending (higher scores = better matches at index 0)
         results.sort_by(|a, b| b.1.cmp(&a.1));
 
         results

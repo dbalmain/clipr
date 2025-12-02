@@ -77,38 +77,38 @@
 
 **TUI Components:**
 
-- [ ] T028 [P] [US1] Define AppMode enum in src/app.rs (Normal, Search, RegisterAssign, Help)
-- [ ] T029 [P] [US1] Define App struct in src/app.rs (mode, history, registers, config, filter, selected_index, search_query, should_quit)
-- [ ] T030 [US1] Implement App::new() in src/app.rs (load history, config, registers from storage)
-- [ ] T031 [US1] Implement vim movement handlers in src/app.rs (handle_normal_key: j/k, gg/G, Ctrl-d/u)
-- [ ] T032 [US1] Implement search mode handlers in src/app.rs (handle_search_key: char input, backspace, up/down navigation, two-stage Escape)
-- [ ] T033 [US1] Implement App::update_search_results() in src/app.rs (call nucleo fuzzy matcher)
-- [ ] T034 [US1] Implement App::select_entry() in src/app.rs (copy to clipboard via backend, set should_quit)
-- [ ] T035 [P] [US1] Implement create_main_layout() in src/ui/layout.rs (40% left clip list, 60% right preview, 1-line status bar)
-- [ ] T036 [P] [US1] Implement render_clip_list() in src/ui/clip_list.rs (List widget with indicators, vim-style selection)
-- [ ] T037 [P] [US1] Implement render_preview() for text in src/ui/preview.rs (Paragraph widget with text wrapping)
-- [ ] T038 [P] [US1] Implement render_search_input() in src/ui/search.rs (search bar at bottom with /query display)
-- [ ] T039 [P] [US1] Implement render_status() in src/ui/status.rs (mode indicator, entry counts)
-- [ ] T040 [US1] Implement App::draw() in src/app.rs (orchestrate all render functions)
-- [ ] T041 [P] [US1] Create module exports in src/ui/mod.rs
+- [x] T028 [P] [US1] Define AppMode enum in src/app.rs (Normal, Search, RegisterAssign, Help)
+- [x] T029 [P] [US1] Define App struct in src/app.rs (mode, history, registers, config, filter, selected_index, search_query, should_quit)
+- [x] T030 [US1] Implement App::new() in src/app.rs (load history, config, registers from storage)
+- [x] T031 [US1] Implement vim movement handlers in src/app.rs (handle_normal_key: j/k, gg/G, Ctrl-d/u)
+- [x] T032 [US1] Implement search mode handlers in src/app.rs (handle_search_key: char input, backspace, up/down navigation, two-stage Escape)
+- [x] T033 [US1] Implement App::update_search_results() in src/app.rs (call nucleo fuzzy matcher)
+- [x] T034 [US1] Implement App::select_entry() in src/app.rs (copy to clipboard via backend, set should_quit)
+- [x] T035 [P] [US1] Implement create_main_layout() in src/ui/layout.rs (40% left clip list, 60% right preview, 1-line status bar)
+- [x] T036 [P] [US1] Implement render_clip_list() in src/ui/clip_list.rs (List widget with indicators, vim-style selection)
+- [x] T037 [P] [US1] Implement render_preview() for text in src/ui/preview.rs (Paragraph widget with text wrapping)
+- [x] T038 [P] [US1] Implement render_search_input() in src/ui/search.rs (search bar at bottom with /query display)
+- [x] T039 [P] [US1] Implement render_status() in src/ui/status.rs (mode indicator, entry counts)
+- [x] T040 [US1] Implement App::draw() in src/app.rs (orchestrate all render functions)
+- [x] T041 [P] [US1] Create module exports in src/ui/mod.rs
 
 **Main Entry Point:**
 
-- [ ] T042 [US1] Implement CLI argument parsing in src/main.rs (--daemon flag, --help, default TUI mode)
-- [ ] T043 [US1] Implement setup_terminal() and restore_terminal() in src/main.rs (crossterm raw mode, alternate screen)
-- [ ] T044 [US1] Implement TUI event loop in src/main.rs (16ms poll, handle keys, render, check clipboard channel, exit logic)
-- [ ] T045 [US1] Implement daemon mode entry point in src/main.rs (spawn wl-paste --watch processes, keep alive loop)
+- [x] T042 [US1] Implement CLI argument parsing in src/main.rs (--daemon flag, --help, default TUI mode)
+- [x] T043 [US1] Implement setup_terminal() and restore_terminal() in src/main.rs (crossterm raw mode, alternate screen)
+- [x] T044 [US1] Implement TUI event loop in src/main.rs (16ms poll, handle keys, render, check clipboard channel, exit logic)
+- [x] T045 [US1] Implement daemon mode entry point in src/main.rs (spawn wl-paste --watch processes, keep alive loop)
 
 **Error Handling:**
 
-- [ ] T046 [US1] Add anyhow::Result returns throughout with .context() for all I/O operations
-- [ ] T047 [US1] Implement corrupted history recovery in src/storage/history.rs (backup .bin.corrupted, return empty history)
+- [x] T046 [US1] Add anyhow::Result returns throughout with .context() for all I/O operations
+- [x] T047 [US1] Implement corrupted history recovery in src/storage/history.rs (backup .bin.corrupted, return empty history)
 
 **Configuration & Logging:**
 
-- [ ] T048 [P] [US1] Initialize env_logger in src/main.rs (check RUST_LOG env var)
-- [ ] T049 [P] [US1] Add debug!/info! logging to storage operations in src/storage/
-- [ ] T050 [P] [US1] Add debug! logging to clipboard operations in src/clipboard/
+- [x] T048 [P] [US1] Initialize env_logger in src/main.rs (check RUST_LOG env var)
+- [x] T049 [P] [US1] Add debug!/info! logging to storage operations in src/storage/
+- [x] T050 [P] [US1] Add debug! logging to clipboard operations in src/clipboard/
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - browse history, fuzzy search, text preview, vim navigation, select to copy
 
@@ -124,26 +124,26 @@
 
 **Image Protocol:**
 
-- [ ] T051 [P] [US2] Define ImageProtocol trait in src/image/protocol.rs (render method, supports_terminal, name)
-- [ ] T052 [US2] Implement KittyImageProtocol in src/image/kitty.rs (use viuer crate for rendering)
-- [ ] T053 [US2] Implement create_image_protocol() factory in src/image/mod.rs (detect terminal via env vars, return Option<Box<dyn ImageProtocol>>)
-- [ ] T054 [P] [US2] Create module exports in src/image/mod.rs
+- [x] T051 [P] [US2] Define ImageProtocol trait in src/image/protocol.rs (render method, supports_terminal, name)
+- [x] T052 [US2] Implement KittyImageProtocol in src/image/kitty.rs (use viuer crate for rendering)
+- [x] T053 [US2] Implement create_image_protocol() factory in src/image/mod.rs (detect terminal via env vars, return Option<Box<dyn ImageProtocol>>)
+- [x] T054 [P] [US2] Create module exports in src/image/mod.rs
 
 **Clipboard Backend Extensions:**
 
-- [ ] T055 [US2] Add read_image/write_image to WaylandBackend in src/clipboard/wayland.rs (wl-paste --type image/png)
-- [ ] T056 [US2] Update clipboard monitoring in src/clipboard/monitor.rs (add image watcher with wl-paste --type image/png --watch)
+- [x] T055 [US2] Add read_image/write_image to WaylandBackend in src/clipboard/wayland.rs (wl-paste --type image/png)
+- [x] T056 [US2] Update clipboard monitoring in src/clipboard/monitor.rs (add image watcher with wl-paste --type image/png --watch)
 
 **TUI Updates:**
 
-- [ ] T057 [US2] Update render_clip_list() in src/ui/clip_list.rs (add image indicator icon/label)
-- [ ] T058 [US2] Implement render_preview() for images in src/ui/preview.rs (call ImageProtocol::render, show fallback message if no protocol)
-- [ ] T059 [US2] Update App::new() in src/app.rs (initialize image_renderer via create_image_protocol())
+- [x] T057 [US2] Update render_clip_list() in src/ui/clip_list.rs (add image indicator icon/label)
+- [x] T058 [US2] Implement render_preview() for images in src/ui/preview.rs (show metadata: dimensions, format with fallback message)
+- [x] T059 [US2] Update App::new() in src/app.rs (initialize image_renderer via create_image_protocol() with async loading)
 
 **Storage Updates:**
 
-- [ ] T060 [US2] Verify ClipContent::Image serialization in src/models/clip.rs (bincode handles Vec<u8>)
-- [ ] T061 [US2] Add max_image_size_bytes config check in src/storage/config.rs (reject images >50MB default)
+- [x] T060 [US2] Verify ClipContent::Image serialization in src/models/clip.rs (bincode handles Vec<u8>)
+- [x] T061 [US2] Add max_image_size_bytes config check in src/storage/config.rs (reject images >50MB default)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - text and image clipboard support with appropriate previews
 
@@ -157,11 +157,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T062 [US3] Implement toggle_pin() in src/app.rs (flip ClipEntry.pinned field, save history)
-- [ ] T063 [US3] Update handle_normal_key() in src/app.rs (add case for 'p' key → toggle_pin)
-- [ ] T064 [US3] Update render_clip_list() in src/ui/clip_list.rs (add pinned indicator like 📌 or [P])
-- [ ] T065 [US3] Update ClipboardHistory rotation logic in src/models/clip.rs (skip pinned entries when removing old clips)
-- [ ] T066 [US3] Verify pinned field serialization in src/storage/history.rs (persists across restarts)
+- [x] T062 [US3] Implement toggle_pin() in src/app.rs (flip ClipEntry.pinned field, save history)
+- [x] T063 [US3] Update handle_normal_key() in src/app.rs (add case for 'p' key → toggle_pin)
+- [x] T064 [US3] Update render_clip_list() in src/ui/clip_list.rs (add pinned indicator like 📌 or [P])
+- [x] T065 [US3] Update ClipboardHistory rotation logic in src/models/clip.rs (skip pinned entries when removing old clips)
+- [x] T066 [US3] Verify pinned field serialization in src/storage/history.rs (persists across restarts)
 
 **Checkpoint**: Pinned clips now exempt from history rotation and visually distinguished
 
@@ -177,25 +177,25 @@
 
 **Register Storage:**
 
-- [ ] T067 [P] [US4] Implement BincodeRegisterStorage in src/storage/registers.rs (load, save, clear with atomic writes)
-- [ ] T068 [US4] Update App::new() in src/app.rs (load temporary registers from BincodeRegisterStorage, merge permanent from config)
+- [x] T067 [P] [US4] Implement BincodeRegisterStorage in src/storage/registers.rs (load, save, clear with atomic writes) - NOTE: Temporary registers loaded from history deserialization; permanent from config
+- [x] T068 [US4] Update App::new() in src/app.rs (load temporary registers from BincodeRegisterStorage, merge permanent from config) - NOTE: Implemented via Registry::load_permanent_from_config in main.rs
 
 **Register Operations:**
 
-- [ ] T069 [US4] Implement enter_register_mode() in src/app.rs (set mode to RegisterAssign)
-- [ ] T070 [US4] Implement handle_register_key() in src/app.rs (wait for letter, save current clip to register, save registers to storage)
-- [ ] T071 [US4] Update handle_normal_key() in src/app.rs (add case for 'm' key → enter_register_mode)
-- [ ] T072 [US4] Implement filter_temporary_registers() in src/app.rs (set filter to show only register entries where register.is_some())
-- [ ] T073 [US4] Implement filter_permanent_registers() in src/app.rs (set filter to show only permanent register entries from config)
-- [ ] T074 [US4] Update handle_normal_key() in src/app.rs (add case for '\'' key → filter_temporary_registers)
-- [ ] T075 [US4] Update handle_normal_key() in src/app.rs (add case for '\"' key → filter_permanent_registers)
-- [ ] T076 [US4] Update clear_filter() in src/app.rs (handle Escape to clear register filters)
+- [x] T069 [US4] Implement enter_register_mode() in src/app.rs (set mode to RegisterAssign)
+- [x] T070 [US4] Implement handle_register_key() in src/app.rs (wait for letter, save current clip to register, save registers to storage)
+- [x] T071 [US4] Update handle_normal_key() in src/app.rs (add case for 'm' key → enter_register_mode)
+- [x] T072 [US4] Implement filter_temporary_registers() in src/app.rs (set filter to show only register entries where register.is_some())
+- [x] T073 [US4] Implement filter_permanent_registers() in src/app.rs (set filter to show only permanent register entries from config)
+- [x] T074 [US4] Update handle_normal_key() in src/app.rs (add case for '\'' key → filter_temporary_registers)
+- [x] T075 [US4] Update handle_normal_key() in src/app.rs (add case for '\"' key → filter_permanent_registers)
+- [x] T076 [US4] Update clear_filter() in src/app.rs (handle Escape to clear register filters)
 
 **TUI Updates:**
 
-- [ ] T077 [US4] Update render_clip_list() in src/ui/clip_list.rs (add register indicator like 🔖 or [R], show register letter)
-- [ ] T078 [US4] Update render_clip_list() title in src/ui/clip_list.rs (show "Temporary Registers" or "Permanent Registers" when filtered)
-- [ ] T079 [US4] Update render_status() in src/ui/status.rs (add registered count to stats)
+- [x] T077 [US4] Update render_clip_list() in src/ui/clip_list.rs (add register indicator like 🔖 or [R], show register letter)
+- [x] T078 [US4] Update render_clip_list() title in src/ui/clip_list.rs (show "Temporary Registers" or "Permanent Registers" when filtered)
+- [x] T079 [US4] Update render_status() in src/ui/status.rs (add registered count to stats)
 
 **Checkpoint**: Temporary and permanent registers fully functional with vim-style mark/jump bindings
 
@@ -211,18 +211,18 @@
 
 **Delete Operations:**
 
-- [ ] T080 [US5] Implement delete_entry() in src/app.rs (remove from history, save to storage)
-- [ ] T081 [US5] Update handle_normal_key() in src/app.rs (add case for 'd' key → delete_entry)
-- [ ] T082 [US5] Implement clear_all() in src/app.rs (remove all non-pinned entries, save to storage)
-- [ ] T083 [US5] Implement confirmation prompt for clear_all in src/app.rs (require second keypress or modal)
+- [x] T080 [US5] Implement delete_entry() in src/app.rs (remove from history, save to storage)
+- [x] T081 [US5] Update handle_normal_key() in src/app.rs (add case for 'd' key → delete_entry)
+- [x] T082 [US5] Implement clear_all() in src/app.rs (remove all non-pinned entries, save to storage)
+- [x] T083 [US5] Implement confirmation prompt for clear_all in src/app.rs (require second keypress or modal)
 
 **Help System:**
 
-- [ ] T084 [P] [US5] Implement render_help_overlay() in src/ui/help.rs (centered overlay with keybinding list)
-- [ ] T085 [P] [US5] Create help text content in src/ui/help.rs (vim movement, search, registers, pinning, delete, quit)
-- [ ] T086 [US5] Implement show_help() and handle_help_key() in src/app.rs (set mode to Help, Escape to exit)
-- [ ] T087 [US5] Update handle_normal_key() in src/app.rs (add case for '?' key → show_help)
-- [ ] T088 [P] [US5] Create module exports for src/ui/help.rs in src/ui/mod.rs
+- [x] T084 [P] [US5] Implement render_help_overlay() in src/ui/help.rs (centered overlay with keybinding list)
+- [x] T085 [P] [US5] Create help text content in src/ui/help.rs (vim movement, search, registers, pinning, delete, quit)
+- [x] T086 [US5] Implement show_help() and handle_help_key() in src/app.rs (set mode to Help, Escape to exit)
+- [x] T087 [US5] Update handle_normal_key() in src/app.rs (add case for '?' key → show_help)
+- [x] T088 [P] [US5] Create module exports for src/ui/help.rs in src/ui/mod.rs
 
 **Checkpoint**: All user stories (US1-US5) are now independently functional
 

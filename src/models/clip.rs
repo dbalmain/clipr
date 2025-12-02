@@ -403,6 +403,14 @@ impl ClipboardHistory {
         self.entries.iter_mut().find(|e| e.id == id)
     }
 
+    /// Toggle pin status of entry by ID
+    pub fn toggle_pin(&mut self, id: u64) -> anyhow::Result<()> {
+        let entry = self.get_entry_mut(id)
+            .ok_or_else(|| anyhow::anyhow!("Entry {} not found", id))?;
+        entry.pinned = !entry.pinned;
+        Ok(())
+    }
+
     /// Clear all non-pinned, non-registered entries
     pub fn clear_unpinned(&mut self) {
         self.entries.retain(|e| {
@@ -473,6 +481,11 @@ impl ClipboardHistory {
     /// Get a reference to all entries
     pub fn entries(&self) -> &[ClipEntry] {
         &self.entries
+    }
+
+    /// Find an entry by content hash
+    pub fn find_by_hash(&self, content_hash: u64) -> Option<u64> {
+        self.hash_to_id.get(&content_hash).copied()
     }
 }
 

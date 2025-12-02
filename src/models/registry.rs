@@ -147,6 +147,81 @@ impl Registry {
         self.temporary.clear();
     }
 
+    /// Rebuild the registry from clipboard history
+    /// This should be called after loading history from storage to sync with deserialized register assignments
+    pub fn rebuild_from_history(&mut self, history: &ClipboardHistory) {
+        self.temporary.clear();
+        self.permanent.clear();
+
+        for entry in history.entries() {
+            for &key in &entry.temporary_registers {
+                self.temporary.insert(key, entry.id);
+            }
+            for &key in &entry.permanent_registers {
+                self.permanent.insert(key, entry.id);
+            }
+        }
+    }
+
+    /// Load permanent registers from config into history
+    /// Creates clips for register content if they don't exist
+    /// If content changes, moves register to new clip
+    pub fn load_permanent_from_config(
+        &mut self,
+        config: &crate::storage::Config,
+        history: &mut ClipboardHistory,
+    ) -> Result<()> {
+        use crate::models::clip::ClipContent;
+        use crate::storage::PermanentRegisterValue;
+
+        for (&key, register_value) in &config.permanent_registers {
+            // Create ClipContent based on register type
+            let (content, name, description) = match register_value {
+                PermanentRegisterValue::Inline { content, name, description } => {
+                    (ClipContent::Text(content.clone()), name.clone(), description.clone())
+                }
+                PermanentRegisterValue::File { file, mime_type, name, description } => {
+                    let mime = mime_type.as_deref().unwrap_or("application/octet-stream");
+                    (
+                        ClipContent::File {
+                            path: file.clone(),
+                            mime_type: mime.to_string(),
+                        },
+                        name.clone(),
+                        description.clone(),
+                    )
+                }
+            };
+
+            // Calculate content hash
+            let content_hash = content.content_hash();
+
+            // Check if clip with this hash already exists
+            if let Some(existing_clip_id) = history.find_by_hash(content_hash) {
+                // Clip exists - just assign register to it
+                self.assign_permanent(key, existing_clip_id, history)?;
+                log::debug!(
+                    "Permanent register '{}' assigned to existing clip {}",
+                    key,
+                    existing_clip_id
+                );
+            } else {
+                // Clip doesn't exist - create new one with metadata
+                let clip_id = history.add_entry_with_metadata(content, name, description);
+
+                // Assign permanent register
+                self.assign_permanent(key, clip_id, history)?;
+                log::debug!(
+                    "Permanent register '{}' assigned to new clip {}",
+                    key,
+                    clip_id
+                );
+            }
+        }
+
+        Ok(())
+    }
+
     /// Get count of assigned temporary registers
     pub fn temporary_count(&self) -> usize {
         self.temporary.len()

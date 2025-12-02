@@ -1,9 +1,21 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use crossterm::{
+    event::{self, Event},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use ratatui::{
+    backend::CrosstermBackend,
+    Terminal,
+};
 use std::io::{self, Read};
+use std::sync::Arc;
+use std::time::Duration;
 
-use clipr::clipboard::watch;
-use clipr::models::ClipContent;
+use clipr::app::App;
+use clipr::clipboard::{create_backend, watch};
+use clipr::models::{ClipContent, Registry};
 use clipr::storage::{ensure_directories, BincodeHistoryStorage, HistoryStorage, TomlConfigStorage, ConfigStorage};
 
 enum ContentType {
@@ -55,8 +67,7 @@ fn main() -> Result<()> {
         Some(Commands::History { limit }) => cmd_history(limit),
         None => {
             // Default: launch TUI
-            println!("TUI mode not yet implemented. Use --help for available commands.");
-            Ok(())
+            cmd_tui()
         }
     }
 }
@@ -220,6 +231,100 @@ fn cmd_history(limit: usize) -> Result<()> {
 
     if history.len() == 0 {
         println!("(empty - no clipboard history yet)");
+    }
+
+    Ok(())
+}
+
+/// Launch the TUI (default mode)
+fn cmd_tui() -> Result<()> {
+    // Load state from storage
+    let (data_dir, config_dir) = ensure_directories()?;
+
+    // Load config
+    let config_storage = TomlConfigStorage::new(config_dir.join("clipr.toml"));
+    let config = config_storage.load()?;
+
+    // Load history
+    let history_path = data_dir.join("history.bin");
+    let history_storage = BincodeHistoryStorage::new(history_path.clone(), config.general.max_history);
+    let mut history = history_storage.load()?;
+
+    // Create registry and rebuild from loaded history to sync register assignments
+    let mut registers = Registry::new();
+    registers.rebuild_from_history(&history);
+
+    // Load permanent registers from config into history
+    // This ensures permanent register content is always available in history
+    registers.load_permanent_from_config(&config, &mut history)?;
+
+    // Rebuild hash map after loading permanent registers
+    history.rebuild_hash_map();
+
+    // Create clipboard backend
+    let backend_box = create_backend()?;
+    let backend: Arc<dyn clipr::clipboard::ClipboardBackend> = Arc::from(backend_box);
+
+    // Create image protocol handler (if terminal supports it)
+    let image_protocol = clipr::image::create_image_protocol();
+
+    // Create app
+    let mut app = App::new(history, registers, config, backend, image_protocol)?;
+
+    // Setup terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    // Main event loop
+    let result = run_tui(&mut terminal, &mut app);
+
+    // Cleanup terminal
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    terminal.show_cursor()?;
+
+    // Save state on exit
+    if let Err(e) = &result {
+        eprintln!("Error running TUI: {}", e);
+    }
+
+    // Save history
+    history_storage.save(&app.history)?;
+
+    // TODO: Save registers to separate file if needed
+
+    result
+}
+
+/// Run the TUI event loop
+fn run_tui<B: ratatui::backend::Backend>(
+    terminal: &mut Terminal<B>,
+    app: &mut App,
+) -> Result<()> {
+    // Trigger initial image load
+    app.update_image_cache();
+
+    loop {
+        // Check for completed image loads
+        app.update_image_cache();
+
+        // Render
+        terminal.draw(|f| app.draw(f))?;
+
+        // Handle events with timeout for responsive UI (60fps)
+        if event::poll(Duration::from_millis(16))? {
+            if let Event::Key(key) = event::read()? {
+                app.handle_key(key)?;
+            }
+        }
+
+        // Exit check
+        if app.should_quit {
+            break;
+        }
     }
 
     Ok(())

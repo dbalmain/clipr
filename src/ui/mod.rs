@@ -1,1 +1,73 @@
-// Placeholder for UI modules (will be implemented in Phase 3 - US1)
+pub mod clip_list;
+pub mod colorscheme;
+pub mod help;
+pub mod layout;
+pub mod preview;
+pub mod search;
+pub mod status;
+
+use ratatui::prelude::*;
+use ratatui::widgets::{Block, Clear, Paragraph};
+
+pub use clip_list::render_clip_list;
+pub use colorscheme::{colors, ColorScheme};
+pub use help::render_help_overlay;
+pub use layout::{centered_rect, create_main_layout};
+pub use preview::render_preview;
+pub use search::render_search_input;
+pub use status::render_keyboard_hints;
+
+/// Render vertical divider line between history and preview panels
+pub fn render_divider(frame: &mut Frame, area: Rect) {
+    let c = colors();
+    let divider_char = "│";
+
+    let lines: Vec<Line> = (0..area.height)
+        .map(|_| Line::from(Span::styled(divider_char, Style::default().fg(c.overlay))))
+        .collect();
+
+    let paragraph = Paragraph::new(lines);
+    frame.render_widget(paragraph, area);
+}
+
+/// Render confirmation dialog overlay for clear all operation
+pub fn render_confirm_overlay(frame: &mut Frame, area: Rect) {
+    let c = colors();
+
+    // Create centered overlay (smaller than help)
+    let overlay_area = centered_rect(50, 20, area);
+
+    // Clear background
+    frame.render_widget(Clear, overlay_area);
+
+    // Create confirmation message
+    let message = vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            "Clear all unpinned clips?",
+            Style::default().fg(c.text).add_modifier(Modifier::BOLD),
+        )),
+        Line::from(""),
+        Line::from(Span::styled(
+            "(Pinned and registered clips will be kept)",
+            Style::default().fg(c.subtext),
+        )),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("y", Style::default().fg(c.temp_reg).add_modifier(Modifier::BOLD)),
+            Span::styled(" - Yes, clear all  ", Style::default().fg(c.text)),
+            Span::styled("n", Style::default().fg(c.temp_reg).add_modifier(Modifier::BOLD)),
+            Span::styled(" - No, cancel", Style::default().fg(c.text)),
+        ]),
+    ];
+
+    let paragraph = Paragraph::new(message)
+        .block(
+            Block::default()
+                .style(Style::default().bg(c.mantle))
+                .padding(ratatui::widgets::Padding::uniform(2)),
+        )
+        .alignment(ratatui::layout::Alignment::Center);
+
+    frame.render_widget(paragraph, overlay_area);
+}
