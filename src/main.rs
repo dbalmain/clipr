@@ -3,20 +3,18 @@ use clap::{Parser, Subcommand};
 use crossterm::{
     event::{self, Event},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use ratatui::{
-    backend::CrosstermBackend,
-    Terminal,
-};
+use ratatui::{Terminal, backend::CrosstermBackend};
 use std::io::{self, Read};
-use std::sync::Arc;
 use std::time::Duration;
 
 use clipr::app::App;
 use clipr::clipboard::{create_backend, watch};
 use clipr::models::{ClipContent, Registry};
-use clipr::storage::{ensure_directories, BincodeHistoryStorage, HistoryStorage, TomlConfigStorage, ConfigStorage};
+use clipr::storage::{
+    BincodeHistoryStorage, ConfigStorage, HistoryStorage, TomlConfigStorage, ensure_directories,
+};
 
 enum ContentType {
     Text,
@@ -77,12 +75,10 @@ fn cmd_listen() -> Result<()> {
     log::info!("Starting clipboard watchers");
 
     // Start text watcher
-    watch::start_text_watcher()
-        .context("Failed to start text watcher")?;
+    watch::start_text_watcher().context("Failed to start text watcher")?;
 
     // Start image watcher (for US2, but can start now)
-    watch::start_image_watcher()
-        .context("Failed to start image watcher")?;
+    watch::start_image_watcher().context("Failed to start image watcher")?;
 
     println!("Clipboard watchers started successfully.");
     println!("Use 'ps -ef | grep wl-paste' to see running processes.");
@@ -136,16 +132,13 @@ fn store_clip(content_type: ContentType) -> Result<()> {
     // Create clip entry based on type
     let content = match content_type {
         ContentType::Text => {
-            let text = String::from_utf8(buffer)
-                .context("Clipboard text is not valid UTF-8")?;
+            let text = String::from_utf8(buffer).context("Clipboard text is not valid UTF-8")?;
             ClipContent::Text(text)
         }
-        ContentType::Image => {
-            ClipContent::Image {
-                data: buffer,
-                mime_type: "image/png".to_string(),
-            }
-        }
+        ContentType::Image => ClipContent::Image {
+            data: buffer,
+            mime_type: "image/png".to_string(),
+        },
     };
 
     // Add to history
@@ -247,7 +240,8 @@ fn cmd_tui() -> Result<()> {
 
     // Load history
     let history_path = data_dir.join("history.bin");
-    let history_storage = BincodeHistoryStorage::new(history_path.clone(), config.general.max_history);
+    let history_storage =
+        BincodeHistoryStorage::new(history_path.clone(), config.general.max_history);
     let mut history = history_storage.load()?;
 
     // Create registry and rebuild from loaded history to sync register assignments
@@ -262,8 +256,7 @@ fn cmd_tui() -> Result<()> {
     history.rebuild_hash_map();
 
     // Create clipboard backend
-    let backend_box = create_backend()?;
-    let backend: Arc<dyn clipr::clipboard::ClipboardBackend> = Arc::from(backend_box);
+    let backend = create_backend()?;
 
     // Create image protocol handler (if terminal supports it)
     let image_protocol = clipr::image::create_image_protocol();
@@ -294,16 +287,11 @@ fn cmd_tui() -> Result<()> {
     // Save history
     history_storage.save(&app.history)?;
 
-    // TODO: Save registers to separate file if needed
-
     result
 }
 
 /// Run the TUI event loop
-fn run_tui<B: ratatui::backend::Backend>(
-    terminal: &mut Terminal<B>,
-    app: &mut App,
-) -> Result<()> {
+fn run_tui<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> {
     // Trigger initial image load
     app.update_image_cache();
 

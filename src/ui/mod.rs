@@ -1,5 +1,6 @@
 pub mod clip_list;
 pub mod colorscheme;
+pub mod error_modal;
 pub mod help;
 pub mod layout;
 pub mod preview;
@@ -11,6 +12,7 @@ use ratatui::widgets::{Block, Clear, Paragraph};
 
 pub use clip_list::render_clip_list;
 pub use colorscheme::{colors, ColorScheme};
+pub use error_modal::render_error_modal;
 pub use help::render_help_overlay;
 pub use layout::{centered_rect, create_main_layout};
 pub use preview::render_preview;
@@ -18,16 +20,25 @@ pub use search::render_search_input;
 pub use status::render_keyboard_hints;
 
 /// Render vertical divider line between history and preview panels
-pub fn render_divider(frame: &mut Frame, area: Rect) {
-    let c = colors();
-    let divider_char = "│";
+/// In comfortable mode, renders empty space (3 chars wide)
+/// In compact mode, renders a single vertical line
+pub fn render_divider(frame: &mut Frame, area: Rect, view_mode: crate::app::ViewMode) {
+    use crate::app::ViewMode;
 
-    let lines: Vec<Line> = (0..area.height)
-        .map(|_| Line::from(Span::styled(divider_char, Style::default().fg(c.overlay))))
-        .collect();
+    // Only render divider line in compact mode
+    // In comfortable mode, the area is just empty space
+    if matches!(view_mode, ViewMode::Compact) {
+        let c = colors();
+        let divider_char = "│";
 
-    let paragraph = Paragraph::new(lines);
-    frame.render_widget(paragraph, area);
+        let lines: Vec<Line> = (0..area.height)
+            .map(|_| Line::from(Span::styled(divider_char, Style::default().fg(c.overlay))))
+            .collect();
+
+        let paragraph = Paragraph::new(lines);
+        frame.render_widget(paragraph, area);
+    }
+    // In comfortable mode, don't render anything (just empty space)
 }
 
 /// Render confirmation dialog overlay for clear all operation

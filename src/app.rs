@@ -1,15 +1,17 @@
 use anyhow::{Context, Result};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use lru::LruCache;
 use ratatui::Frame;
 use ratatui_image::protocol::StatefulProtocol;
+use std::num::NonZeroUsize;
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::Arc;
 
 use crate::clipboard::ClipboardBackend;
 use crate::image::ImageProtocol;
 use crate::models::{ClipboardHistory, Registry, SearchIndex};
 use crate::storage::Config;
 use crate::ui;
+use crate::ui::colorscheme::ColorScheme;
 
 /// Request to load an image in the background
 struct ImageLoadRequest {
@@ -36,6 +38,8 @@ pub enum AppMode {
     Confirm,
     /// Help overlay (activated with '?')
     Help,
+    /// Numeric prefix mode with command palette (activated by typing digits)
+    Numeric,
 }
 
 /// Register filter state
@@ -47,6 +51,15 @@ pub enum RegisterFilter {
     Temporary,
     /// Show only clips with permanent registers (activated with ")
     Permanent,
+}
+
+/// View mode for clip list display
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ViewMode {
+    /// Compact: Single line per clip
+    Compact,
+    /// Comfortable: Two lines per clip with metadata
+    Comfortable,
 }
 
 impl Default for AppMode {
@@ -69,18 +82,18 @@ pub struct App {
     /// Application configuration
     pub config: Config,
 
+    /// Color scheme (loaded from config)
+    color_scheme: ColorScheme,
+
     /// Fuzzy search index
     pub search_index: SearchIndex,
 
     /// Clipboard backend for copying selected entries
-    clipboard_backend: Arc<dyn ClipboardBackend>,
+    clipboard_backend: Box<dyn ClipboardBackend>,
 
-    /// Image rendering protocol (always available with fallback to Halfblocks)
-    image_protocol: ImageProtocol,
-
-    /// Cached image protocol state for the currently displayed image
-    /// Stores (clip_id, protocol_image) for fast rendering
-    image_cache: Option<(u64, StatefulProtocol)>,
+    /// LRU cache of decoded images (clip_id -> protocol_image)
+    /// Caches recently viewed images to avoid re-decoding
+    image_cache: LruCache<u64, StatefulProtocol>,
 
     /// Channel for requesting background image loads
     image_load_tx: Sender<ImageLoadRequest>,
@@ -101,11 +114,21 @@ pub struct App {
     /// Register key being assigned (when in RegisterAssign mode)
     pub register_key: Option<char>,
 
-    /// Number being input for 'g<number>' jump command
-    pub jump_number_input: String,
+    /// Numeric prefix for vim-style commands (e.g., 5j, 10G, 3Ctrl-d)
+    pub numeric_prefix: String,
 
     /// Active register filter (None, Temporary, or Permanent)
     pub register_filter: RegisterFilter,
+
+    /// Current view mode (Compact or Comfortable)
+    pub view_mode: ViewMode,
+
+    /// Startup error message (shown in modal, dismissible with ESC)
+    pub startup_error: Option<String>,
+
+    /// List area height in terminal rows (updated each frame)
+    /// Used to calculate half-page and full-page movements
+    list_height: u16,
 
     /// Flag to request application exit
     pub should_quit: bool,
@@ -117,7 +140,7 @@ impl App {
         history: ClipboardHistory,
         registers: Registry,
         config: Config,
-        clipboard_backend: Arc<dyn ClipboardBackend>,
+        clipboard_backend: Box<dyn ClipboardBackend>,
         mut image_protocol: ImageProtocol,
     ) -> Result<Self> {
         // Create channels for async image loading
@@ -157,26 +180,46 @@ impl App {
             log::debug!("Image loader thread exiting");
         });
 
-        // Create a new protocol for the main thread (the other was moved to the worker)
-        let main_protocol = ImageProtocol::new();
+        // Load color scheme from config
+        let (color_scheme, startup_error) = match ColorScheme::from_name(&config.general.theme) {
+            Ok(scheme) => (scheme, None),
+            Err(e) => {
+                log::error!("Theme error: {}", e);
+                (ColorScheme::default(), Some(e.to_string()))
+            }
+        };
+
+        // Create LRU cache with configured size
+        let cache_size = NonZeroUsize::new(config.general.image_cache_size)
+            .unwrap_or_else(|| NonZeroUsize::new(20).unwrap());
+        let image_cache = LruCache::new(cache_size);
+
+        // Parse view mode from config
+        let view_mode = match config.general.view_mode.to_lowercase().as_str() {
+            "comfortable" => ViewMode::Comfortable,
+            _ => ViewMode::Compact, // Default to compact for invalid values
+        };
 
         Ok(App {
             mode: AppMode::default(),
             history,
             registers,
+            color_scheme,
             config,
             search_index: SearchIndex::new(),
             clipboard_backend,
-            image_protocol: main_protocol,
-            image_cache: None,
+            image_cache,
             image_load_tx: load_tx,
             image_load_rx: result_rx,
             selected_index: 0,
             search_query: String::new(),
             search_results: Vec::new(),
             register_key: None,
-            jump_number_input: String::new(),
+            numeric_prefix: String::new(),
             register_filter: RegisterFilter::None,
+            view_mode,
+            startup_error,
+            list_height: 20, // Default, will be updated each frame
             should_quit: false,
         })
     }
@@ -222,15 +265,36 @@ impl App {
         visible.get(self.selected_index).copied()
     }
 
+    /// Calculate the number of entries for a half-page movement
+    /// Takes into account the view mode (Comfortable uses 2 rows per entry)
+    fn half_page_size(&self) -> usize {
+        let rows_per_entry = match self.view_mode {
+            ViewMode::Compact => 1,
+            ViewMode::Comfortable => 2,
+        };
+        let visible_entries = (self.list_height as usize) / rows_per_entry;
+        (visible_entries / 2).max(1) // At least 1
+    }
+
+    /// Calculate the number of entries for a full-page movement
+    /// Takes into account the view mode (Comfortable uses 2 rows per entry)
+    fn full_page_size(&self) -> usize {
+        let rows_per_entry = match self.view_mode {
+            ViewMode::Compact => 1,
+            ViewMode::Comfortable => 2,
+        };
+        let visible_entries = (self.list_height as usize) / rows_per_entry;
+        visible_entries.max(1) // At least 1
+    }
+
     /// Request async loading of the currently selected image
     /// If the selected clip is an image and not already cached, sends a load request
     fn request_image_load(&mut self) {
         if let Some(clip_id) = self.selected_clip_id() {
             // Check if already cached
-            if let Some((cached_id, _)) = &self.image_cache {
-                if *cached_id == clip_id {
-                    return; // Already cached
-                }
+            if self.image_cache.contains(&clip_id) {
+                log::debug!("Image {} already cached", clip_id);
+                return; // Already cached
             }
 
             // Check if this is an image clip
@@ -242,14 +306,8 @@ impl App {
                         clip_id,
                         image_data: data.clone(),
                     });
-                } else {
-                    // Not an image, clear cache
-                    self.image_cache = None;
                 }
             }
-        } else {
-            // No selection, clear cache
-            self.image_cache = None;
         }
     }
 
@@ -258,16 +316,13 @@ impl App {
     pub fn update_image_cache(&mut self) {
         // Check for any completed image loads (non-blocking)
         while let Ok(result) = self.image_load_rx.try_recv() {
-            log::debug!("Received loaded image for clip {}", result.clip_id);
             if let Some(protocol_image) = result.protocol_image {
-                self.image_cache = Some((result.clip_id, protocol_image));
+                log::debug!("Caching loaded image for clip {}", result.clip_id);
+                // Add to LRU cache (automatically evicts least recently used if full)
+                self.image_cache.put(result.clip_id, protocol_image);
             } else {
-                // Failed to load, clear cache for this clip
-                if let Some((cached_id, _)) = &self.image_cache {
-                    if *cached_id == result.clip_id {
-                        self.image_cache = None;
-                    }
-                }
+                log::warn!("Failed to load image for clip {}", result.clip_id);
+                // Don't cache failed loads
             }
         }
     }
@@ -497,6 +552,14 @@ impl App {
         self.request_image_load();
     }
 
+    /// Toggle between Compact and Comfortable view modes
+    pub fn toggle_view_mode(&mut self) {
+        self.view_mode = match self.view_mode {
+            ViewMode::Compact => ViewMode::Comfortable,
+            ViewMode::Comfortable => ViewMode::Compact,
+        };
+    }
+
     /// Enter confirmation mode for clear all
     pub fn enter_confirm_clear_all(&mut self) {
         self.mode = AppMode::Confirm;
@@ -521,80 +584,100 @@ impl App {
 
     /// Handle keyboard event based on current mode
     pub fn handle_key(&mut self, key: KeyEvent) -> Result<()> {
+        // If there's a startup error modal, any key dismisses it
+        if self.startup_error.is_some() {
+            self.startup_error = None;
+            return Ok(());
+        }
+
         match self.mode {
             AppMode::Normal => self.handle_normal_key(key),
             AppMode::Search => self.handle_search_key(key),
             AppMode::RegisterAssign => self.handle_register_key(key),
             AppMode::Confirm => self.handle_confirm_key(key),
             AppMode::Help => self.handle_help_key(key),
+            AppMode::Numeric => self.handle_numeric_key(key),
         }
     }
 
     /// Handle keys in normal mode (vim-style navigation)
     fn handle_normal_key(&mut self, key: KeyEvent) -> Result<()> {
-        // Handle jump number input mode (g<number><Enter>)
-        if !self.jump_number_input.is_empty() {
-            match key.code {
-                KeyCode::Char(c) if c.is_ascii_digit() => {
-                    self.jump_number_input.push(c);
-                }
-                KeyCode::Enter => {
-                    // Execute jump - remove 'g' prefix before parsing
-                    let number_str = self.jump_number_input.trim_start_matches('g');
-                    if let Ok(num) = number_str.parse::<usize>() {
-                        self.jump_to_number(num);
-                    }
-                    self.jump_number_input.clear();
-                }
-                KeyCode::Char('g') if self.jump_number_input == "g" => {
-                    // gg = jump to top
-                    self.jump_to_top();
-                    self.jump_number_input.clear();
-                }
-                KeyCode::Esc => {
-                    // Cancel jump
-                    self.jump_number_input.clear();
-                }
-                _ => {
-                    // Any other key cancels the jump
-                    self.jump_number_input.clear();
-                }
-            }
-            return Ok(());
-        }
-
         match key.code {
-            // Vim navigation
-            KeyCode::Char('j') => self.move_down(1),
-            KeyCode::Char('k') => self.move_up(1),
-            KeyCode::Char('g') if key.modifiers.is_empty() => {
-                // Start jump number input mode
-                self.jump_number_input.push('g');
+            // Entering a digit starts Numeric mode
+            KeyCode::Char(c) if c.is_ascii_digit() && key.modifiers.is_empty() => {
+                self.numeric_prefix.push(c);
+                self.mode = AppMode::Numeric;
             }
-            KeyCode::Char('G') => self.jump_to_bottom(),
+
+            // Vim navigation (simple - no numeric prefix in Normal mode)
+            KeyCode::Char('j') => {
+                self.move_down(1);
+            }
+            KeyCode::Char('k') => {
+                self.move_up(1);
+            }
             KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                // Ctrl-d: half page down
-                self.move_down(10); // TODO: Calculate based on terminal height
+                let count = self.half_page_size();
+                self.move_down(count);
             }
             KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                // Ctrl-u: half page up
-                self.move_up(10); // TODO: Calculate based on terminal height
+                let count = self.half_page_size();
+                self.move_up(count);
+            }
+
+            // Home/End for jump to top/bottom (replacing gg/G)
+            KeyCode::Home => {
+                self.jump_to_top();
+            }
+            KeyCode::End => {
+                self.jump_to_bottom();
+            }
+
+            // PageUp/PageDown
+            KeyCode::PageUp => {
+                let count = self.full_page_size();
+                self.move_up(count);
+            }
+            KeyCode::PageDown => {
+                let count = self.full_page_size();
+                self.move_down(count);
             }
 
             // Actions
-            KeyCode::Enter => self.select_entry()?,
-            KeyCode::Char('m') => self.enter_register_mode(),
-            KeyCode::Char('p') => self.toggle_pin()?,
-            KeyCode::Char('/') => self.enter_search_mode(),
-            KeyCode::Char('?') => self.toggle_help(),
-            KeyCode::Char('\'') => self.toggle_temporary_filter(),
-            KeyCode::Char('"') => self.toggle_permanent_filter(),
+            KeyCode::Enter => {
+                self.select_entry()?;
+            }
+            KeyCode::Char('m') => {
+                self.enter_register_mode();
+            }
+            KeyCode::Char('p') => {
+                self.toggle_pin()?;
+            }
+            KeyCode::Char('/') => {
+                self.enter_search_mode();
+            }
+            KeyCode::Char('?') => {
+                self.toggle_help();
+            }
+            KeyCode::Char('\'') => {
+                self.toggle_temporary_filter();
+            }
+            KeyCode::Char('"') => {
+                self.toggle_permanent_filter();
+            }
+            KeyCode::Char('v') => {
+                self.toggle_view_mode();
+            }
             KeyCode::Char('d') => {
                 // Delete entry - silently ignore errors (e.g., can't delete permanent register clips)
                 let _ = self.delete_entry();
             }
-            KeyCode::Char('D') => self.enter_confirm_clear_all(),
-            KeyCode::Char('q') => self.quit(),
+            KeyCode::Char('D') => {
+                self.enter_confirm_clear_all();
+            }
+            KeyCode::Char('q') => {
+                self.quit();
+            }
             KeyCode::Esc => {
                 // ESC clears filter first, then quits
                 if self.register_filter != RegisterFilter::None {
@@ -605,7 +688,9 @@ impl App {
                 }
             }
 
-            _ => {}
+            _ => {
+                // Unknown keys do nothing in Normal mode
+            }
         }
         Ok(())
     }
@@ -674,16 +759,85 @@ impl App {
         Ok(())
     }
 
+    /// Handle keys in numeric mode (command palette with numeric prefix)
+    fn handle_numeric_key(&mut self, key: KeyEvent) -> Result<()> {
+        match key.code {
+            // Additional digits extend the prefix
+            KeyCode::Char(c) if c.is_ascii_digit() => {
+                self.numeric_prefix.push(c);
+            }
+
+            // Commands that use the numeric prefix
+            KeyCode::Char('j') => {
+                let count = self.numeric_prefix.parse::<usize>().unwrap_or(1);
+                self.move_down(count);
+                self.numeric_prefix.clear();
+                self.mode = AppMode::Normal;
+            }
+            KeyCode::Char('k') => {
+                let count = self.numeric_prefix.parse::<usize>().unwrap_or(1);
+                self.move_up(count);
+                self.numeric_prefix.clear();
+                self.mode = AppMode::Normal;
+            }
+            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                let multiplier = self.numeric_prefix.parse::<usize>().unwrap_or(1);
+                let count = self.half_page_size() * multiplier;
+                self.move_down(count);
+                self.numeric_prefix.clear();
+                self.mode = AppMode::Normal;
+            }
+            KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                let multiplier = self.numeric_prefix.parse::<usize>().unwrap_or(1);
+                let count = self.half_page_size() * multiplier;
+                self.move_up(count);
+                self.numeric_prefix.clear();
+                self.mode = AppMode::Normal;
+            }
+            KeyCode::Enter => {
+                // Enter jumps to the typed number
+                let count = self.numeric_prefix.parse::<usize>().unwrap_or(0);
+                self.jump_to_number(count);
+                self.numeric_prefix.clear();
+                self.mode = AppMode::Normal;
+            }
+            KeyCode::Esc => {
+                // Escape cancels numeric mode
+                self.numeric_prefix.clear();
+                self.mode = AppMode::Normal;
+            }
+
+            _ => {
+                // Any other key cancels numeric mode
+                self.numeric_prefix.clear();
+                self.mode = AppMode::Normal;
+            }
+        }
+        Ok(())
+    }
+
     /// Render the TUI
     pub fn draw(&mut self, frame: &mut Frame) {
         let size = frame.area();
 
+        // Set themed background for entire frame
+        frame.render_widget(
+            ratatui::widgets::Block::default().style(
+                ratatui::prelude::Style::default().bg(self.color_scheme.base)
+            ),
+            size,
+        );
+
         // Create layout: [clip_list, divider, preview, keyboard_hints]
-        let chunks = ui::create_main_layout(size);
+        let chunks = ui::create_main_layout(size, self.view_mode);
         let clip_list_area = chunks[0];
         let divider_area = chunks[1];
         let preview_area = chunks[2];
         let keyboard_hints_area = chunks[3];
+
+        // Update list height for page movement calculations
+        // Subtract 1 for the header line that clip_list renders
+        self.list_height = clip_list_area.height.saturating_sub(1);
 
         // Get visible clips for rendering
         let visible_clip_ids = self.visible_clips();
@@ -692,7 +846,7 @@ impl App {
             .filter_map(|&id| self.history.get_entry(id))
             .collect();
 
-        // Render clip list (with inline search or jump mode)
+        // Render clip list (with inline search or numeric prefix display)
         ui::render_clip_list(
             frame,
             clip_list_area,
@@ -700,33 +854,34 @@ impl App {
             self.selected_index,
             self.mode,
             &self.search_query,
-            &self.jump_number_input,
+            &self.numeric_prefix,
             self.register_filter,
+            self.view_mode,
+            &self.color_scheme,
         );
 
         // Render divider between history and preview
-        ui::render_divider(frame, divider_area);
+        ui::render_divider(frame, divider_area, self.view_mode);
 
         // Render preview for selected clip
         let selected_entry = self.selected_clip_id()
             .and_then(|id| self.history.get_entry(id));
 
         // Get cached image if available for current selection
+        // peek() doesn't update LRU order, get_mut() does
         let cached_image = if let Some(clip_id) = self.selected_clip_id() {
-            if let Some((cached_id, ref mut protocol)) = self.image_cache {
-                if cached_id == clip_id {
-                    Some(protocol)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
+            self.image_cache.get_mut(&clip_id)
         } else {
             None
         };
 
-        ui::render_preview(frame, preview_area, selected_entry, cached_image);
+        ui::render_preview(
+            frame,
+            preview_area,
+            selected_entry,
+            cached_image,
+            self.config.general.show_preview_metadata,
+        );
 
         // Render mode-specific keyboard hints
         ui::render_keyboard_hints(frame, keyboard_hints_area, self.mode);
@@ -739,6 +894,11 @@ impl App {
         // Render confirmation dialog if in confirm mode
         if matches!(self.mode, AppMode::Confirm) {
             ui::render_confirm_overlay(frame, size);
+        }
+
+        // Render startup error modal if present (takes precedence over other overlays)
+        if let Some(ref error_msg) = self.startup_error {
+            ui::render_error_modal(frame, size, error_msg, &self.color_scheme);
         }
     }
 }

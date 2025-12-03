@@ -12,9 +12,17 @@ pub fn render_help_overlay(frame: &mut Frame, area: Rect) {
 
  Navigation:
    j/k         Move down/up
-   gg/G        Jump to top/bottom
-   g<number>   Jump to clip number
+   Home/End    Jump to top/bottom
+   PgUp/PgDn   Page up/down
    Ctrl-d/u    Half-page down/up
+
+   <number>    Enter numeric mode (shows command palette)
+               5j = move down 5 lines
+               3Ctrl-d = 3 half-pages down
+               15Enter = jump to line 15
+
+ View:
+   v           Toggle between Compact/Comfortable view modes
 
  Search & Filter:
    /           Start fuzzy search
@@ -46,7 +54,7 @@ pub fn render_help_overlay(frame: &mut Frame, area: Rect) {
         .block(
             Block::default()
                 .style(Style::default().bg(c.mantle))
-                .padding(ratatui::widgets::Padding::uniform(1)),
+                .padding(ratatui::widgets::Padding::uniform(2)),
         )
         .style(Style::default().fg(c.text))
         .wrap(Wrap { trim: false });

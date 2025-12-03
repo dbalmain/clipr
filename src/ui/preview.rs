@@ -13,34 +13,40 @@ pub fn render_preview(
     area: Rect,
     entry: Option<&ClipEntry>,
     cached_image: Option<&mut StatefulProtocol>,
+    show_metadata: bool,
 ) {
     let c = colors();
 
     if let Some(entry) = entry {
-        // Fixed 4 rows for metadata to prevent jumping
-        // Will expand if description is multiline
-        let metadata_lines_count = if let Some(desc) = &entry.description {
-            let desc_lines = desc.lines().count();
-            if desc_lines > 1 {
-                3 + desc_lines // name+size, mime-type, description (multiline), registers
+        // Calculate metadata height if metadata is enabled
+        let (content_area, metadata_area) = if show_metadata {
+            // Fixed 4 rows for metadata to prevent jumping
+            // Will expand if description is multiline
+            let metadata_lines_count = if let Some(desc) = &entry.description {
+                let desc_lines = desc.lines().count();
+                if desc_lines > 1 {
+                    3 + desc_lines // name+size, mime-type, description (multiline), registers
+                } else {
+                    4 // name+size, mime-type, description, registers
+                }
             } else {
-                4 // name+size, mime-type, description, registers
-            }
+                4 // name+size, mime-type, (empty), registers
+            };
+
+            // Split area: content (top) + metadata (bottom, no separator)
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Min(3),                              // Content area
+                    Constraint::Length(metadata_lines_count as u16), // Metadata (fixed height)
+                ])
+                .split(area);
+
+            (chunks[0], Some(chunks[1]))
         } else {
-            4 // name+size, mime-type, (empty), registers
+            // No metadata, use full area for content
+            (area, None)
         };
-
-        // Split area: content (top) + metadata (bottom, no separator)
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Min(3),                              // Content area
-                Constraint::Length(metadata_lines_count as u16), // Metadata (fixed height)
-            ])
-            .split(area);
-
-        let content_area = chunks[0];
-        let metadata_area = chunks[1];
 
         // === RENDER CONTENT ===
         let mut content_lines = Vec::new();
@@ -85,8 +91,9 @@ pub fn render_preview(
             frame.render_widget(content_para, content_area);
         }
 
-        // === RENDER METADATA (Fixed 4 rows) ===
-        let mut metadata_lines = Vec::new();
+        // === RENDER METADATA (if enabled) ===
+        if let Some(metadata_area) = metadata_area {
+            let mut metadata_lines = Vec::new();
 
         // Line 1: Name (bold) + size (right-aligned)
         let name = entry.name.as_deref().unwrap_or("[unnamed]");
@@ -170,8 +177,9 @@ pub fn render_preview(
             metadata_lines.push(Line::from(""));
         }
 
-        let metadata_para = Paragraph::new(metadata_lines);
-        frame.render_widget(metadata_para, metadata_area);
+            let metadata_para = Paragraph::new(metadata_lines);
+            frame.render_widget(metadata_para, metadata_area);
+        }
     } else {
         let msg = Paragraph::new("No selection")
             .style(Style::default().fg(c.subtext));

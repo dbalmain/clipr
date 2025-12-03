@@ -27,3 +27,4 @@ Rust (stable channel, latest 3 releases supported - currently 1.75+): Follow sta
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
+- Do not do `cargo build --release` unless requested. Always build do `cargo build`.

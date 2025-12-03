@@ -48,6 +48,23 @@ pub struct GeneralConfig {
     /// Enable debug logging
     #[serde(default)]
     pub debug_logging: bool,
+
+    /// Color theme name
+    /// Options: "catppuccin-mocha", "catppuccin-latte", "tokyonight-night", "tokyonight-storm", "tokyonight-day"
+    #[serde(default = "default_theme")]
+    pub theme: String,
+
+    /// Maximum number of images to cache in memory
+    #[serde(default = "default_image_cache_size")]
+    pub image_cache_size: usize,
+
+    /// Default view mode for TUI (compact or comfortable)
+    #[serde(default = "default_view_mode")]
+    pub view_mode: String,
+
+    /// Show metadata section in preview pane (name, size, mime-type, description)
+    #[serde(default = "default_show_preview_metadata")]
+    pub show_preview_metadata: bool,
 }
 
 impl Default for GeneralConfig {
@@ -59,6 +76,10 @@ impl Default for GeneralConfig {
             max_image_preview_size_bytes: default_max_image_preview_size(),
             exit_on_select: default_exit_on_select(),
             debug_logging: false,
+            theme: default_theme(),
+            image_cache_size: default_image_cache_size(),
+            view_mode: default_view_mode(),
+            show_preview_metadata: default_show_preview_metadata(),
         }
     }
 }
@@ -82,6 +103,22 @@ fn default_max_image_preview_size() -> u64 {
 
 fn default_exit_on_select() -> bool {
     true
+}
+
+fn default_theme() -> String {
+    "catppuccin-mocha".to_string()
+}
+
+fn default_image_cache_size() -> usize {
+    20 // Cache up to 20 images
+}
+
+fn default_view_mode() -> String {
+    "compact".to_string()
+}
+
+fn default_show_preview_metadata() -> bool {
+    false // Opt-in: metadata hidden by default
 }
 
 /// Value for a permanent register entry

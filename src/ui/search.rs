@@ -17,7 +17,8 @@ pub fn render_search_input(frame: &mut Frame, area: Rect, query: &str) {
 
     let block = Block::default()
         .borders(Borders::ALL)
-        .title("Search (Esc to cancel, Enter to select)");
+        .title("Search (Esc to cancel, Enter to select)")
+        .padding(ratatui::widgets::Padding::horizontal(1));
 
     let input = Paragraph::new(format!("/{}", query))
         .block(block)
