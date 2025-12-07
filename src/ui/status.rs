@@ -11,11 +11,11 @@ pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode) {
     let hints = match mode {
         AppMode::Normal => {
             vec![
-                Span::styled("j k", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("j/k", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" move  "),
                 Span::styled("/", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" search  "),
-                Span::styled("' \"", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("'/\"", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" filter  "),
                 Span::styled("m", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" mark  "),
@@ -24,7 +24,7 @@ pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode) {
                 Span::styled("d", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" delete  "),
                 Span::styled("D", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(" clear  "),
+                Span::raw(" clear all  "),
                 Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" copy  "),
                 Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),

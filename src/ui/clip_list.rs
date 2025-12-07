@@ -46,18 +46,20 @@ fn render_compact_items(
             // Determine text color and styling based on selection
             let is_selected = i == selected;
             let text_style = if is_selected {
-                Style::default().fg(c.selection).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(c.selection)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(c.text)
             };
 
             // Add clip number (starting from 0)
-            let number = format!("{:2} ", i);
+            let number = format!("{:3} ", i);
             spans.push(Span::styled(number.clone(), text_style));
 
             // Add pinned indicator
             if entry.pinned {
-                spans.push(Span::styled("📌 ", text_style));
+                spans.push(Span::styled(" ", text_style));
             }
 
             // Calculate registers string and its length
@@ -130,7 +132,9 @@ fn render_comfortable_items(
             // Determine text color and styling based on selection
             let is_selected = i == selected;
             let text_style = if is_selected {
-                Style::default().fg(c.selection).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(c.selection)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(c.text)
             };
@@ -140,7 +144,7 @@ fn render_comfortable_items(
 
             // LINE 1: Number + Preview
             let mut line1_spans = Vec::new();
-            let number = format!("{:2} ", i);
+            let number = format!("{:3} ", i);
             line1_spans.push(Span::styled(number.clone(), text_style));
 
             // Get preview text (full width minus number)
@@ -153,13 +157,14 @@ fn render_comfortable_items(
 
             // Pin directly under the clip number
             if entry.pinned {
-                line2_spans.push(Span::styled("📌 ", Style::default().fg(metadata_color)));
+                line2_spans.push(Span::styled("   ", Style::default().fg(metadata_color)));
             } else {
-                line2_spans.push(Span::raw("   "));
+                line2_spans.push(Span::raw("    "));
             }
 
             // Add timestamp
-            let timestamp_secs = entry.timestamp
+            let timestamp_secs = entry
+                .timestamp
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_secs() as i64)
                 .unwrap_or(0);
@@ -253,10 +258,7 @@ pub fn render_clip_list(
             RegisterFilter::Permanent => format!("{} [perm]", base),
             RegisterFilter::None => base,
         };
-        (
-            with_filter,
-            Style::default().fg(c.search_input),
-        )
+        (with_filter, Style::default().fg(c.search_input))
     } else {
         // Normal mode: show "Clipboard History" or filter status
         let header = match register_filter {
@@ -314,9 +316,7 @@ pub fn render_clip_list(
 
     // Create list without borders
     // scroll_padding keeps 3 items visible above/below selection when scrolling
-    let list = List::new(items)
-        .highlight_symbol("► ")
-        .scroll_padding(3);
+    let list = List::new(items).highlight_symbol("►").scroll_padding(1);
 
     let mut list_state = ListState::default();
     list_state.select(Some(selected));

@@ -288,7 +288,7 @@ pub fn render_clip_list(
 
     let list = List::new(items)
         .block(Block::default().borders(Borders::ALL).title(title))
-        .highlight_symbol("► ");
+        .highlight_symbol("►");
 
     let mut list_state = ListState::default();
     list_state.select(Some(selected));
