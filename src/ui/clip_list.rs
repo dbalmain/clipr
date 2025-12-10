@@ -35,7 +35,7 @@ fn render_compact_items(
     entries: &[&ClipEntry],
     selected: usize,
     available_width: usize,
-    c: &super::colorscheme::ColorScheme,
+    theme: &super::Theme,
 ) -> Vec<ListItem<'static>> {
     entries
         .iter()
@@ -47,10 +47,10 @@ fn render_compact_items(
             let is_selected = i == selected;
             let text_style = if is_selected {
                 Style::default()
-                    .fg(c.selection)
+                    .fg(theme.clip_text_selected.fg.unwrap_or(theme.default_fg))
                     .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(c.text)
+                theme.clip_text
             };
 
             // Add clip number (starting from 0)
@@ -67,12 +67,12 @@ fn render_compact_items(
 
             // Temporary registers with single quotes
             for &reg in &entry.temporary_registers {
-                register_strs.push((format!("'{}", reg), c.temp_reg));
+                register_strs.push((format!("'{}", reg), theme.temp_register));
             }
 
             // Permanent registers with double quotes
             for &reg in &entry.permanent_registers {
-                register_strs.push((format!("\"{}", reg), c.perm_reg));
+                register_strs.push((format!("\"{}", reg), theme.perm_register));
             }
 
             let has_registers = !register_strs.is_empty();
@@ -105,10 +105,10 @@ fn render_compact_items(
 
                 spans.push(Span::raw(" ".repeat(padding_len)));
 
-                // Add register spans with their colors (not affected by selection)
-                for (text, color) in register_strs.iter() {
+                // Add register spans with their styles (not affected by selection)
+                for (text, style) in register_strs.iter() {
                     spans.push(Span::raw(" "));
-                    spans.push(Span::styled(text.clone(), Style::default().fg(*color)));
+                    spans.push(Span::styled(text.clone(), *style));
                 }
             }
 
@@ -123,7 +123,7 @@ fn render_comfortable_items(
     entries: &[&ClipEntry],
     selected: usize,
     available_width: usize,
-    c: &super::colorscheme::ColorScheme,
+    theme: &super::Theme,
 ) -> Vec<ListItem<'static>> {
     entries
         .iter()
@@ -133,14 +133,14 @@ fn render_comfortable_items(
             let is_selected = i == selected;
             let text_style = if is_selected {
                 Style::default()
-                    .fg(c.selection)
+                    .fg(theme.clip_text_selected.fg.unwrap_or(theme.default_fg))
                     .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(c.text)
+                theme.clip_text
             };
 
             // Metadata not affected by selection
-            let metadata_color = c.subtext;
+            let metadata_color = theme.timestamp.fg.unwrap_or(theme.default_fg);
 
             // LINE 1: Number + Preview
             let mut line1_spans = Vec::new();
@@ -177,19 +177,19 @@ fn render_comfortable_items(
             // Calculate registers
             let mut register_strs = Vec::new();
             for &reg in &entry.temporary_registers {
-                register_strs.push((format!("'{}", reg), c.temp_reg));
+                register_strs.push((format!("'{}", reg), theme.temp_register));
             }
             for &reg in &entry.permanent_registers {
-                register_strs.push((format!("\"{}", reg), c.perm_reg));
+                register_strs.push((format!("\"{}", reg), theme.perm_register));
             }
 
             // Add registers 2 spaces after the date
             if !register_strs.is_empty() {
                 line2_spans.push(Span::raw("  "));
 
-                for (text, color) in register_strs.iter() {
+                for (text, style) in register_strs.iter() {
                     line2_spans.push(Span::raw(" "));
-                    line2_spans.push(Span::styled(text.clone(), Style::default().fg(*color)));
+                    line2_spans.push(Span::styled(text.clone(), *style));
                 }
             }
 
@@ -216,9 +216,8 @@ pub fn render_clip_list(
     numeric_prefix: &str,
     register_filter: RegisterFilter,
     view_mode: ViewMode,
-    color_scheme: &super::colorscheme::ColorScheme,
+    theme: &super::Theme,
 ) {
-    let c = color_scheme;
 
     // Reserve lines for header (search or title or jump mode)
     // In comfortable mode: title, empty, count, empty (4 lines)
@@ -248,7 +247,7 @@ pub fn render_clip_list(
         // Numeric prefix mode: show the prefix being typed with space
         (
             format!(": {}", numeric_prefix),
-            Style::default().fg(c.temp_reg),
+            theme.temp_register,
         )
     } else if matches!(mode, AppMode::Search) {
         // Search mode: show "/ <query>" with filter if active
@@ -258,7 +257,7 @@ pub fn render_clip_list(
             RegisterFilter::Permanent => format!("{} [perm]", base),
             RegisterFilter::None => base,
         };
-        (with_filter, Style::default().fg(c.search_input))
+        (with_filter, theme.search_input)
     } else {
         // Normal mode: show "Clipboard History" or filter status
         let header = match register_filter {
@@ -267,9 +266,9 @@ pub fn render_clip_list(
             RegisterFilter::None => "Clipboard History".to_string(),
         };
         let style = match register_filter {
-            RegisterFilter::Temporary => Style::default().fg(c.temp_reg),
-            RegisterFilter::Permanent => Style::default().fg(c.perm_reg),
-            RegisterFilter::None => Style::default().fg(c.subtext),
+            RegisterFilter::Temporary => theme.temp_register,
+            RegisterFilter::Permanent => theme.perm_register,
+            RegisterFilter::None => theme.clip_list_header,
         };
         (header, style)
     };
@@ -281,7 +280,7 @@ pub fn render_clip_list(
             vec![
                 Line::from(Span::styled(header_left, header_style)),
                 Line::from(""),
-                Line::from(Span::styled(count_text, Style::default().fg(c.subtext))),
+                Line::from(Span::styled(count_text, theme.clip_list_header)),
                 Line::from(""),
             ]
         }
@@ -299,7 +298,7 @@ pub fn render_clip_list(
             vec![Line::from(vec![
                 Span::styled(header_left, header_style),
                 Span::raw(" ".repeat(padding)),
-                Span::styled(count_text, Style::default().fg(c.subtext)),
+                Span::styled(count_text, theme.clip_list_header),
             ])]
         }
     };
@@ -310,8 +309,8 @@ pub fn render_clip_list(
     // Create list items based on view mode
     let available_width = list_area.width as usize;
     let items: Vec<ListItem> = match view_mode {
-        ViewMode::Compact => render_compact_items(entries, selected, available_width, &c),
-        ViewMode::Comfortable => render_comfortable_items(entries, selected, available_width, &c),
+        ViewMode::Compact => render_compact_items(entries, selected, available_width, theme),
+        ViewMode::Comfortable => render_comfortable_items(entries, selected, available_width, theme),
     };
 
     // Create list without borders

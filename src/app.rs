@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use lru::LruCache;
+use notify::{RecommendedWatcher, Watcher};
 use ratatui::Frame;
 use ratatui_image::protocol::StatefulProtocol;
 use std::num::NonZeroUsize;
@@ -11,7 +12,7 @@ use crate::image::ImageProtocol;
 use crate::models::{ClipboardHistory, Registry, SearchIndex};
 use crate::storage::Config;
 use crate::ui;
-use crate::ui::colorscheme::ColorScheme;
+use crate::ui::Theme;
 
 /// Request to load an image in the background
 struct ImageLoadRequest {
@@ -82,8 +83,8 @@ pub struct App {
     /// Application configuration
     pub config: Config,
 
-    /// Color scheme (loaded from config)
-    color_scheme: ColorScheme,
+    /// Theme (loaded from config)
+    theme: Theme,
 
     /// Fuzzy search index
     pub search_index: SearchIndex,
@@ -100,6 +101,13 @@ pub struct App {
 
     /// Channel for receiving completed image loads
     image_load_rx: Receiver<ImageLoadResult>,
+
+    /// File watcher for theme development mode (only present if theme_dev_mode enabled)
+    /// Kept alive to maintain the watch
+    _theme_watcher: Option<RecommendedWatcher>,
+
+    /// Channel for receiving theme file change notifications
+    theme_watch_rx: Option<Receiver<notify::Result<notify::Event>>>,
 
     /// Currently selected index in the visible list
     pub selected_index: usize,
@@ -180,13 +188,41 @@ impl App {
             log::debug!("Image loader thread exiting");
         });
 
-        // Load color scheme from config
-        let (color_scheme, startup_error) = match ColorScheme::from_name(&config.general.theme) {
-            Ok(scheme) => (scheme, None),
+        // Load theme from config
+        let (theme, startup_error) = match Theme::load(&config.general.theme) {
+            Ok(t) => (t, None),
             Err(e) => {
-                log::error!("Theme error: {}", e);
-                (ColorScheme::default(), Some(e.to_string()))
+                log::error!("Failed to load theme '{}': {}", config.general.theme, e);
+                (Theme::default(), Some(e.to_string()))
             }
+        };
+
+        // Set up file watcher for theme development mode
+        let (theme_watcher, theme_watch_rx) = if config.general.theme_dev_mode {
+            log::info!("Theme development mode enabled - watching for theme file changes");
+
+            let (tx, rx) = mpsc::channel();
+
+            // Create watcher
+            let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
+                let _ = tx.send(res);
+            }).context("Failed to create theme file watcher")?;
+
+            // Get theme file path to watch
+            if let Ok(theme_path) = Theme::get_theme_path(&config.general.theme) {
+                use notify::RecursiveMode;
+                if let Err(e) = watcher.watch(&theme_path, RecursiveMode::NonRecursive) {
+                    log::warn!("Failed to watch theme file {:?}: {}", theme_path, e);
+                } else {
+                    log::info!("Watching theme file: {:?}", theme_path);
+                }
+            } else {
+                log::warn!("Could not determine theme file path for '{}'", config.general.theme);
+            }
+
+            (Some(watcher), Some(rx))
+        } else {
+            (None, None)
         };
 
         // Create LRU cache with configured size
@@ -204,13 +240,15 @@ impl App {
             mode: AppMode::default(),
             history,
             registers,
-            color_scheme,
+            theme,
             config,
             search_index: SearchIndex::new(),
             clipboard_backend,
             image_cache,
             image_load_tx: load_tx,
             image_load_rx: result_rx,
+            _theme_watcher: theme_watcher,
+            theme_watch_rx,
             selected_index: 0,
             search_query: String::new(),
             search_results: Vec::new(),
@@ -582,6 +620,64 @@ impl App {
         self.should_quit = true;
     }
 
+    /// Reload theme from config file
+    /// Performs atomic swap: load → validate → apply only if valid
+    /// On error, displays error modal and keeps previous theme
+    pub fn reload_theme(&mut self) -> Result<()> {
+        log::info!("Reloading theme: {}", self.config.general.theme);
+
+        match Theme::load(&self.config.general.theme) {
+            Ok(new_theme) => {
+                // Atomic swap - only replace if load succeeded
+                self.theme = new_theme;
+                // Clear any previous error
+                self.startup_error = None;
+                log::info!("Theme reloaded successfully");
+                Ok(())
+            }
+            Err(e) => {
+                // Keep previous theme, show error modal
+                let error_msg = format!("Failed to reload theme '{}':\n{}",
+                    self.config.general.theme, e);
+                log::error!("{}", error_msg);
+                self.startup_error = Some(error_msg);
+                Err(e)
+            }
+        }
+    }
+
+    /// Check for theme file changes and auto-reload if in development mode
+    /// Called from main event loop before rendering
+    /// Non-blocking check using try_recv()
+    pub fn check_theme_reload(&mut self) {
+        // Only check if watcher is active
+        if let Some(ref rx) = self.theme_watch_rx {
+            // Drain all pending events (multiple events can queue up)
+            let mut has_changes = false;
+
+            while let Ok(result) = rx.try_recv() {
+                match result {
+                    Ok(event) => {
+                        // Check if this is a modify event for the theme file
+                        if matches!(event.kind, notify::EventKind::Modify(_)) {
+                            log::debug!("Theme file changed: {:?}", event.paths);
+                            has_changes = true;
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("File watcher error: {}", e);
+                    }
+                }
+            }
+
+            // Reload theme if changes detected
+            if has_changes {
+                log::info!("Auto-reloading theme due to file changes");
+                let _ = self.reload_theme();
+            }
+        }
+    }
+
     /// Handle keyboard event based on current mode
     pub fn handle_key(&mut self, key: KeyEvent) -> Result<()> {
         // If there's a startup error modal, any key dismisses it
@@ -623,6 +719,10 @@ impl App {
             KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 let count = self.half_page_size();
                 self.move_up(count);
+            }
+            KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                // Reload theme from config file
+                let _ = self.reload_theme();
             }
 
             // Home/End for jump to top/bottom (replacing gg/G)
@@ -823,7 +923,7 @@ impl App {
         // Set themed background for entire frame
         frame.render_widget(
             ratatui::widgets::Block::default().style(
-                ratatui::prelude::Style::default().bg(self.color_scheme.base)
+                ratatui::prelude::Style::default().bg(self.theme.default_bg)
             ),
             size,
         );
@@ -857,11 +957,11 @@ impl App {
             &self.numeric_prefix,
             self.register_filter,
             self.view_mode,
-            &self.color_scheme,
+            &self.theme,
         );
 
         // Render divider between history and preview
-        ui::render_divider(frame, divider_area, self.view_mode);
+        ui::render_divider(frame, divider_area, self.view_mode, &self.theme);
 
         // Render preview for selected clip
         let selected_entry = self.selected_clip_id()
@@ -881,24 +981,25 @@ impl App {
             selected_entry,
             cached_image,
             self.config.general.show_preview_metadata,
+            &self.theme,
         );
 
         // Render mode-specific keyboard hints
-        ui::render_keyboard_hints(frame, keyboard_hints_area, self.mode);
+        ui::render_keyboard_hints(frame, keyboard_hints_area, self.mode, &self.theme);
 
         // Render help overlay if in help mode
         if matches!(self.mode, AppMode::Help) {
-            ui::render_help_overlay(frame, size);
+            ui::render_help_overlay(frame, size, &self.theme);
         }
 
         // Render confirmation dialog if in confirm mode
         if matches!(self.mode, AppMode::Confirm) {
-            ui::render_confirm_overlay(frame, size);
+            ui::render_confirm_overlay(frame, size, &self.theme);
         }
 
         // Render startup error modal if present (takes precedence over other overlays)
         if let Some(ref error_msg) = self.startup_error {
-            ui::render_error_modal(frame, size, error_msg, &self.color_scheme);
+            ui::render_error_modal(frame, size, error_msg, &self.theme);
         }
     }
 }

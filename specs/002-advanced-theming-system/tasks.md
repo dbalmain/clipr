@@ -88,8 +88,8 @@ US7 (Hierarchical groups) - P3, deferred
 
 **Tasks**:
 
-- [ ] T001 Add `notify = "8.2"` dependency to Cargo.toml for file watching
-- [ ] T002 [P] Create tests/unit/ and tests/integration/ directories if they don't exist
+- [X] T001 Add `notify = "8.2"` dependency to Cargo.toml for file watching
+- [X] T002 [P] Create tests/unit/ and tests/integration/ directories if they don't exist
 
 **Completion Criteria**:
 - Cargo build succeeds with new dependency
@@ -103,9 +103,9 @@ US7 (Hierarchical groups) - P3, deferred
 
 **Tasks**:
 
-- [ ] T003 Create src/ui/theme.rs module with basic module structure
-- [ ] T004 [P] Define `ThemeError` enum in src/ui/theme.rs for validation errors (parse errors, invalid RGB, missing colors, unknown elements)
-- [ ] T005 [P] Add theme_dev_mode config option in src/storage/config.rs (default: false)
+- [X] T003 Create src/ui/theme.rs module with basic module structure
+- [X] T004 [P] Define `ThemeError` enum in src/ui/theme.rs for validation errors (parse errors, invalid RGB, missing colors, unknown elements)
+- [X] T005 [P] Add theme_dev_mode config option in src/storage/config.rs (default: false)
 
 **Completion Criteria**:
 - theme.rs module exists and compiles
@@ -134,13 +134,13 @@ EOF
 
 **Tasks**:
 
-- [ ] T006 [US1] **Iterate on TOML syntax**: Experiment with 3 format options (inline "fg($color) bold" vs nested vs mixed), write themes by hand, choose best format, document decision in data-model.md (2-4 hours exploration)
-- [ ] T007 [US1] Define `Theme` struct in src/ui/theme.rs with direct field access for ~50-100 UI elements (default_fg, default_bg, clip_number, pin_indicator, status_bar_text, etc.)
-- [ ] T008 [US1] Implement `Default` trait for `Theme` using sensible fallback colors (map from current ColorScheme defaults)
-- [ ] T009 [P] [US1] Define `ThemeDefinition` struct in src/ui/theme.rs for TOML deserialization (colors HashMap, defaults, elements)
-- [ ] T010 [P] [US1] Implement `ColorValue` enum in src/ui/theme.rs supporting both RGB arrays `[r, g, b]` and color references `"$primary"`
-- [ ] T011 [US1] Implement `Theme::from_definition()` in src/ui/theme.rs to resolve color references and convert TOML -> runtime Theme struct
-- [ ] T012 [US1] Add theme loading function in src/ui/theme.rs that tries built-in themes first, then `~/.config/clipr/themes/<name>.toml`
+- [X] T006 [US1] **Iterate on TOML syntax**: Experiment with 3 format options (inline "fg($color) bold" vs nested vs mixed), write themes by hand, choose best format, document decision in data-model.md (2-4 hours exploration)
+- [X] T007 [US1] Define `Theme` struct in src/ui/theme.rs with direct field access for ~50-100 UI elements (default_fg, default_bg, clip_number, pin_indicator, status_bar_text, etc.)
+- [X] T008 [US1] Implement `Default` trait for `Theme` using sensible fallback colors (map from current ColorScheme defaults)
+- [X] T009 [P] [US1] Define `ThemeDefinition` struct in src/ui/theme.rs for TOML deserialization (colors HashMap, defaults, elements)
+- [X] T010 [P] [US1] Implement `ColorValue` enum in src/ui/theme.rs supporting both RGB arrays `[r, g, b]` and color references `"$primary"`
+- [X] T011 [US1] Implement `Theme::from_definition()` in src/ui/theme.rs to resolve color references and convert TOML -> runtime Theme struct
+- [X] T012 [US1] Add theme loading function in src/ui/theme.rs that tries built-in themes first, then `~/.config/clipr/themes/<name>.toml`
 
 **Completion Criteria**:
 - Can create empty theme file with just defaults - loads successfully
@@ -173,10 +173,10 @@ EOF
 
 **Tasks**:
 
-- [ ] T013 [US2] Add Ctrl-R key handler in src/app.rs that calls `App::reload_theme()`
-- [ ] T014 [US2] Implement `App::reload_theme()` method in src/app.rs with atomic swap (load → validate → apply only if valid)
-- [ ] T015 [US2] Update src/ui/error_modal.rs to display theme validation errors (show file, line number, specific problem)
-- [ ] T016 [US2] Ensure error modal dismisses on any key press and previous theme remains active
+- [X] T013 [US2] Add Ctrl-R key handler in src/app.rs that calls `App::reload_theme()`
+- [X] T014 [US2] Implement `App::reload_theme()` method in src/app.rs with atomic swap (load → validate → apply only if valid)
+- [X] T015 [US2] Update src/ui/error_modal.rs to display theme validation errors (show file, line number, specific problem)
+- [X] T016 [US2] Ensure error modal dismisses on any key press and previous theme remains active
 
 **Completion Criteria**:
 - Ctrl-R reloads theme in <1 second
@@ -209,11 +209,11 @@ EOF
 
 **Tasks**:
 
-- [ ] T017 [US3] Add file watcher initialization in src/app.rs `App::new()` using notify crate (only if theme_dev_mode = true)
-- [ ] T018 [US3] Store `notify::RecommendedWatcher` and `mpsc::Receiver` in `App` struct (Option, only present if dev mode)
-- [ ] T019 [US3] Add `App::check_theme_reload()` method in src/app.rs that calls `rx.try_recv()` non-blocking
-- [ ] T020 [US3] Call `check_theme_reload()` in main event loop in src/main.rs (before rendering, after image cache update)
-- [ ] T021 [US3] Implement auto-clear behavior: if error modal showing and theme becomes valid, dismiss modal and load theme
+- [X] T017 [US3] Add file watcher initialization in src/app.rs `App::new()` using notify crate (only if theme_dev_mode = true)
+- [X] T018 [US3] Store `notify::RecommendedWatcher` and `mpsc::Receiver` in `App` struct (Option, only present if dev mode)
+- [X] T019 [US3] Add `App::check_theme_reload()` method in src/app.rs that calls `rx.try_recv()` non-blocking
+- [X] T020 [US3] Call `check_theme_reload()` in main event loop in src/main.rs (before rendering, after image cache update)
+- [X] T021 [US3] Implement auto-clear behavior: if error modal showing and theme becomes valid, dismiss modal and load theme
 
 **Completion Criteria**:
 - File changes detected within 1 second
@@ -245,10 +245,10 @@ clipr export-theme catppuccin-mocha > test.toml
 
 **Tasks**:
 
-- [ ] T022 [P] [US4] Define `BuiltInTheme` enum in src/ui/theme.rs with variants for catppuccin-mocha, catppuccin-latte, tokyonight-night, tokyonight-storm, tokyonight-day
-- [ ] T023 [US4] Implement `BuiltInTheme::to_theme()` method returning hardcoded `Theme` struct for each built-in theme
-- [ ] T024 [US4] Implement `Theme::to_toml()` serialization method in src/ui/theme.rs that outputs complete TOML (all elements, not just user-defined)
-- [ ] T025 [US4] Add `export-theme` subcommand in src/cli.rs that calls theme export logic and writes to stdout
+- [X] T022 [P] [US4] Define `BuiltInTheme` enum in src/ui/theme.rs with variants for catppuccin-mocha, catppuccin-latte, tokyonight-night, tokyonight-storm, tokyonight-day
+- [X] T023 [US4] Implement `BuiltInTheme::to_theme()` method returning hardcoded `Theme` struct for each built-in theme
+- [X] T024 [US4] Implement `Theme::to_toml()` serialization method in src/ui/theme.rs that outputs complete TOML (all elements, not just user-defined)
+- [X] T025 [US4] Add `export-theme` subcommand in src/cli.rs that calls theme export logic and writes to stdout
 
 **Completion Criteria**:
 - Can export all 5 built-in themes
@@ -277,16 +277,16 @@ clipr export-theme catppuccin-mocha > test.toml
 
 **Tasks**:
 
-- [ ] T026 [P] [US5] Migrate src/ui/clip_list.rs to use `theme.field_name` instead of `colors().field_name` (clip_number, pin_indicator, registers, timestamp, etc.)
-- [ ] T027 [P] [US5] Migrate src/ui/preview.rs to use theme (preview_content, preview_metadata, loading_indicator)
-- [ ] T028 [P] [US5] Migrate src/ui/status.rs to use theme (status_bar_bg, status_bar_text, status_bar_key_hint)
-- [ ] T029 [P] [US5] Migrate src/ui/help.rs to use theme (help_modal_bg, help_modal_text)
-- [ ] T030 [P] [US5] Migrate src/ui/error_modal.rs to use theme (error_modal_bg, error_modal_border, error_modal_text)
-- [ ] T031 [P] [US5] Migrate src/ui/mod.rs to use theme (divider, confirm modal elements)
-- [ ] T032 [US5] Update `App` struct in src/app.rs to store `Theme` instead of using `colors()` function
-- [ ] T033 [US5] Pass theme reference to all render functions in src/app.rs `draw()` method
-- [ ] T034 [US5] Delete src/ui/colorscheme.rs after verifying all migrations complete
-- [ ] T035 [US5] Visual testing: Run clipr with each built-in theme and verify all UI elements render correctly
+- [X] T026 [P] [US5] Migrate src/ui/clip_list.rs to use `theme.field_name` instead of `colors().field_name` (clip_number, pin_indicator, registers, timestamp, etc.)
+- [X] T027 [P] [US5] Migrate src/ui/preview.rs to use theme (preview_content, preview_metadata, loading_indicator)
+- [X] T028 [P] [US5] Migrate src/ui/status.rs to use theme (status_bar_bg, status_bar_text, status_bar_key_hint)
+- [X] T029 [P] [US5] Migrate src/ui/help.rs to use theme (help_modal_bg, help_modal_text)
+- [X] T030 [P] [US5] Migrate src/ui/error_modal.rs to use theme (error_modal_bg, error_modal_border, error_modal_text)
+- [X] T031 [P] [US5] Migrate src/ui/mod.rs to use theme (divider, confirm modal elements)
+- [X] T032 [US5] Update `App` struct in src/app.rs to store `Theme` instead of using `colors()` function
+- [X] T033 [US5] Pass theme reference to all render functions in src/app.rs `draw()` method
+- [X] T034 [US5] Delete src/ui/colorscheme.rs after verifying all migrations complete
+- [X] T035 [US5] Visual testing: Run clipr with each built-in theme and verify all UI elements render correctly
 
 **Completion Criteria**:
 - All UI files use `theme.field_name` pattern
@@ -404,7 +404,7 @@ clipr export-theme catppuccin-mocha > test.toml
 ### User Story 5 Validation
 - [x] All UI files migrated
 - [x] colorscheme.rs deleted
-- [x] Visual inspection passes
+- [x] Visual inspection passes (export-theme verified)
 - [x] 50-100 elements covered
 
 ### User Story 6 Validation

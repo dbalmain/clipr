@@ -1,61 +1,60 @@
 use ratatui::prelude::*;
 use ratatui::widgets::Paragraph;
 
-use super::colorscheme::colors;
+use super::Theme;
 use crate::app::AppMode;
 
 /// Render keyboard hints bar showing mode-specific shortcuts
-pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode) {
-    let c = colors();
+pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode, theme: &Theme) {
 
     let hints = match mode {
         AppMode::Normal => {
             vec![
-                Span::styled("j/k", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("j/k", theme.status_key),
                 Span::raw(" move  "),
-                Span::styled("/", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("/", theme.status_key),
                 Span::raw(" search  "),
-                Span::styled("'/\"", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("'/\"", theme.status_key),
                 Span::raw(" filter  "),
-                Span::styled("m", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("m", theme.status_key),
                 Span::raw(" mark  "),
-                Span::styled("p", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("p", theme.status_key),
                 Span::raw(" pin  "),
-                Span::styled("d", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("d", theme.status_key),
                 Span::raw(" delete  "),
-                Span::styled("D", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("D", theme.status_key),
                 Span::raw(" clear all  "),
-                Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Enter", theme.status_key),
                 Span::raw(" copy  "),
-                Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("q", theme.status_key),
                 Span::raw(" quit  "),
-                Span::styled("?", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("?", theme.status_key),
                 Span::raw(" help"),
             ]
         }
         AppMode::Search => {
             vec![
                 Span::raw("type to search  "),
-                Span::styled("↑/↓", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("↑/↓", theme.status_key),
                 Span::raw(" move  "),
-                Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Esc", theme.status_key),
                 Span::raw(" cancel  "),
-                Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Enter", theme.status_key),
                 Span::raw(" select"),
             ]
         }
         AppMode::RegisterAssign => {
             vec![
                 Span::raw("type register key  "),
-                Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Esc", theme.status_key),
                 Span::raw(" cancel"),
             ]
         }
         AppMode::Confirm => {
             vec![
-                Span::styled("y", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("y", theme.status_key),
                 Span::raw(" confirm  "),
-                Span::styled("n/Esc", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("n/Esc", theme.status_key),
                 Span::raw(" cancel"),
             ]
         }
@@ -64,19 +63,19 @@ pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode) {
         }
         AppMode::Numeric => {
             vec![
-                Span::styled("j/k", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("j/k", theme.status_key),
                 Span::raw(" move  "),
-                Span::styled("Ctrl-d/u", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Ctrl-d/u", theme.status_key),
                 Span::raw(" half-page  "),
-                Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Enter", theme.status_key),
                 Span::raw(" jump to line  "),
-                Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Esc", theme.status_key),
                 Span::raw(" cancel"),
             ]
         }
     };
 
-    let paragraph = Paragraph::new(Line::from(hints)).style(Style::default().fg(c.subtext));
+    let paragraph = Paragraph::new(Line::from(hints)).style(theme.status_desc);
 
     frame.render_widget(paragraph, area);
 }

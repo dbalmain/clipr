@@ -2,10 +2,10 @@ use ratatui::prelude::*;
 use ratatui::widgets::{Block, Clear, Paragraph, Wrap};
 
 use super::layout::centered_rect;
-use super::colorscheme::colors;
+use super::Theme;
 
 /// Render help overlay with keybindings
-pub fn render_help_overlay(frame: &mut Frame, area: Rect) {
+pub fn render_help_overlay(frame: &mut Frame, area: Rect, theme: &Theme) {
     let help_text = r#" Help
 
  CLIPR KEYBINDINGS
@@ -45,7 +45,6 @@ pub fn render_help_overlay(frame: &mut Frame, area: Rect) {
 "#;
 
     let overlay_area = centered_rect(60, 80, area);
-    let c = colors();
 
     // Clear the background area first to hide underlying content
     frame.render_widget(Clear, overlay_area);
@@ -53,10 +52,10 @@ pub fn render_help_overlay(frame: &mut Frame, area: Rect) {
     let paragraph = Paragraph::new(help_text)
         .block(
             Block::default()
-                .style(Style::default().bg(c.mantle))
+                .style(Style::default().bg(theme.help_modal_bg))
                 .padding(ratatui::widgets::Padding::uniform(2)),
         )
-        .style(Style::default().fg(c.text))
+        .style(Style::default().fg(theme.help_desc.fg.unwrap_or(theme.default_fg)))
         .wrap(Wrap { trim: false });
 
     frame.render_widget(paragraph, overlay_area);

@@ -1,11 +1,10 @@
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph};
 
-use super::colorscheme::colors;
+use super::Theme;
 
 /// Render search input bar at bottom of screen when in search mode
-pub fn render_search_input(frame: &mut Frame, area: Rect, query: &str) {
-    let c = colors();
+pub fn render_search_input(frame: &mut Frame, area: Rect, query: &str, theme: &Theme) {
 
     // Position at bottom, 3 lines tall
     let input_area = Rect {
@@ -22,7 +21,7 @@ pub fn render_search_input(frame: &mut Frame, area: Rect, query: &str) {
 
     let input = Paragraph::new(format!("/{}", query))
         .block(block)
-        .style(Style::default().fg(c.search_input));
+        .style(theme.search_input);
 
     frame.render_widget(input, input_area);
 }

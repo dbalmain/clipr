@@ -5,7 +5,7 @@ use ratatui_image::protocol::StatefulProtocol;
 use ratatui_image::StatefulImage;
 
 use crate::models::{ClipContent, ClipEntry};
-use super::colorscheme::colors;
+use super::Theme;
 
 /// Render preview panel with content at top and metadata at bottom
 pub fn render_preview(
@@ -14,8 +14,8 @@ pub fn render_preview(
     entry: Option<&ClipEntry>,
     cached_image: Option<&mut StatefulProtocol>,
     show_metadata: bool,
+    theme: &Theme,
 ) {
-    let c = colors();
 
     if let Some(entry) = entry {
         // Calculate metadata height if metadata is enabled
@@ -70,14 +70,14 @@ pub fn render_preview(
                     content_lines.push(Line::from(
                         Span::styled(
                             "[Loading image...]",
-                            Style::default().fg(c.subtext)
+                            theme.preview_metadata_label
                         )
                     ));
                 }
             }
             ClipContent::File { path, .. } => {
                 content_lines.push(Line::from(vec![
-                    Span::styled("File: ", Style::default().fg(c.subtext)),
+                    Span::styled("File: ", theme.preview_metadata_label),
                     Span::raw(path.to_string_lossy()),
                 ]));
             }
@@ -86,7 +86,7 @@ pub fn render_preview(
         // Only render text content if we didn't render an image
         if !image_rendered {
             let content_para = Paragraph::new(content_lines)
-                .style(Style::default().fg(c.text))
+                .style(theme.preview_text)
                 .wrap(Wrap { trim: false });
             frame.render_widget(content_para, content_area);
         }
@@ -113,9 +113,9 @@ pub fn render_preview(
         };
 
         metadata_lines.push(Line::from(vec![
-            Span::styled(name, Style::default().add_modifier(Modifier::BOLD).fg(c.text)),
+            Span::styled(name, theme.preview_metadata_value.add_modifier(Modifier::BOLD)),
             Span::raw(" ".repeat(padding)),
-            Span::styled(size_info, Style::default().fg(c.subtext)),
+            Span::styled(size_info, theme.preview_metadata_label),
         ]));
 
         // Line 2: Mime-type
@@ -125,7 +125,7 @@ pub fn render_preview(
             ClipContent::File { mime_type, .. } => mime_type,
         };
         metadata_lines.push(Line::from(
-            Span::styled(mime_type, Style::default().fg(c.subtext))
+            Span::styled(mime_type, theme.preview_metadata_label)
         ));
 
         // Line 3: Description (always present, may be empty or multiline)
@@ -133,7 +133,7 @@ pub fn render_preview(
             // Handle multiline descriptions
             for line in desc.lines() {
                 metadata_lines.push(Line::from(
-                    Span::styled(line, Style::default().fg(c.subtext))
+                    Span::styled(line, theme.preview_metadata_label)
                 ));
             }
         } else {
@@ -152,7 +152,7 @@ pub fn render_preview(
                 }
                 register_spans.push(Span::styled(
                     format!("'{}", reg),
-                    Style::default().fg(c.temp_reg)
+                    theme.temp_register
                 ));
             }
 
@@ -167,7 +167,7 @@ pub fn render_preview(
                 }
                 register_spans.push(Span::styled(
                     format!("\"{}", reg),
-                    Style::default().fg(c.perm_reg)
+                    theme.perm_register
                 ));
             }
 
@@ -182,7 +182,7 @@ pub fn render_preview(
         }
     } else {
         let msg = Paragraph::new("No selection")
-            .style(Style::default().fg(c.subtext));
+            .style(theme.preview_metadata_label);
         frame.render_widget(msg, area);
     }
 }

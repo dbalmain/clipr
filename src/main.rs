@@ -49,6 +49,12 @@ enum Commands {
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },
+
+    /// Export a theme to TOML format
+    ExportTheme {
+        /// Theme name (built-in or custom)
+        theme_name: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -63,6 +69,7 @@ fn main() -> Result<()> {
         Some(Commands::StoreImage) => cmd_store_image(),
         Some(Commands::Stats) => cmd_stats(),
         Some(Commands::History { limit }) => cmd_history(limit),
+        Some(Commands::ExportTheme { theme_name }) => cmd_export_theme(&theme_name),
         None => {
             // Default: launch TUI
             cmd_tui()
@@ -229,6 +236,23 @@ fn cmd_history(limit: usize) -> Result<()> {
     Ok(())
 }
 
+/// Export a theme to TOML format
+fn cmd_export_theme(theme_name: &str) -> Result<()> {
+    use clipr::ui::Theme;
+
+    // Load the theme
+    let theme = Theme::load(theme_name).context(format!(
+        "Failed to load theme '{}'. Use built-in theme names like 'catppuccin-mocha' or a custom theme file.",
+        theme_name
+    ))?;
+
+    // Export to TOML and print to stdout
+    let toml = theme.to_toml();
+    println!("{}", toml);
+
+    Ok(())
+}
+
 /// Launch the TUI (default mode)
 fn cmd_tui() -> Result<()> {
     // Load state from storage
@@ -298,6 +322,9 @@ fn run_tui<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
     loop {
         // Check for completed image loads
         app.update_image_cache();
+
+        // Check for theme file changes (development mode)
+        app.check_theme_reload();
 
         // Render
         terminal.draw(|f| app.draw(f))?;

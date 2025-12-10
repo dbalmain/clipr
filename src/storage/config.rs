@@ -65,6 +65,10 @@ pub struct GeneralConfig {
     /// Show metadata section in preview pane (name, size, mime-type, description)
     #[serde(default = "default_show_preview_metadata")]
     pub show_preview_metadata: bool,
+
+    /// Enable theme development mode (auto-reload theme file on changes)
+    #[serde(default)]
+    pub theme_dev_mode: bool,
 }
 
 impl Default for GeneralConfig {
@@ -80,6 +84,7 @@ impl Default for GeneralConfig {
             image_cache_size: default_image_cache_size(),
             view_mode: default_view_mode(),
             show_preview_metadata: default_show_preview_metadata(),
+            theme_dev_mode: false,
         }
     }
 }
