@@ -43,17 +43,10 @@ fn render_compact_table_rows<'a>(
         .enumerate()
         .map(|(i, entry)| {
             let is_selected = i == selected;
-            let text_style = if is_selected {
-                Style::default()
-                    .fg(theme.clip_text_selected.fg.unwrap_or(theme.default_fg))
-                    .add_modifier(Modifier::BOLD)
-            } else {
-                theme.clip_text
-            };
 
-            // Column 1: Number
+            // Column 1: Number - use clip_number style
             let number = format!("{:3}", i);
-            let number_cell = Cell::from(Span::styled(number, text_style));
+            let number_cell = Cell::from(Span::styled(number, theme.clip_number));
 
             // Column 2: Pin indicator
             let pin_text = if entry.pinned {
@@ -61,12 +54,16 @@ fn render_compact_table_rows<'a>(
             } else {
                 ""
             };
-            let pin_style = theme.pin_indicator_style;
-            let pin_cell = Cell::from(Span::styled(pin_text, pin_style));
+            let pin_cell = Cell::from(Span::styled(pin_text, theme.pin_indicator_style));
 
-            // Column 3: Preview (use full content_col_width since number and pin are separate)
+            // Column 3: Preview - use clip_text or clip_text_selected
             let preview = entry.preview(content_col_width);
-            let preview_cell = Cell::from(Span::styled(preview, text_style));
+            let preview_style = if is_selected {
+                theme.clip_text_selected
+            } else {
+                theme.clip_text
+            };
+            let preview_cell = Cell::from(Span::styled(preview, preview_style));
 
             // Column 4: Registers
             let mut register_spans = Vec::new();
@@ -133,10 +130,10 @@ fn render_comfortable_items(
         .map(|(i, entry)| {
             // Determine text color and styling based on selection
             let is_selected = i == selected;
-            let text_style = if is_selected {
-                Style::default()
-                    .fg(theme.clip_text_selected.fg.unwrap_or(theme.default_fg))
-                    .add_modifier(Modifier::BOLD)
+
+            // Use clip_text or clip_text_selected for preview
+            let preview_style = if is_selected {
+                theme.clip_text_selected
             } else {
                 theme.clip_text
             };
@@ -147,12 +144,12 @@ fn render_comfortable_items(
             // LINE 1: Number + Preview
             let mut line1_spans = Vec::new();
             let number = format!("{:3} ", i);
-            line1_spans.push(Span::styled(number.clone(), text_style));
+            line1_spans.push(Span::styled(number, theme.clip_number));
 
             // Get preview text (full width minus number)
             let max_preview_len = available_width.saturating_sub(3);
             let preview = entry.preview(max_preview_len);
-            line1_spans.push(Span::styled(preview, text_style));
+            line1_spans.push(Span::styled(preview, preview_style));
 
             // LINE 2: Pin + Date + Registers
             let mut line2_spans = Vec::new();

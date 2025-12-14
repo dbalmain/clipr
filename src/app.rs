@@ -211,9 +211,11 @@ impl App {
             let (tx, rx) = mpsc::channel();
 
             // Create watcher
-            let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
-                let _ = tx.send(res);
-            }).context("Failed to create theme file watcher")?;
+            let mut watcher =
+                notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
+                    let _ = tx.send(res);
+                })
+                .context("Failed to create theme file watcher")?;
 
             // Watch the themes directory instead of specific file
             // This handles editors that do atomic writes (create temp, rename)
@@ -227,7 +229,10 @@ impl App {
                     }
                 }
             } else {
-                log::warn!("Could not determine theme file path for '{}'", config.general.theme);
+                log::warn!(
+                    "Could not determine theme file path for '{}'",
+                    config.general.theme
+                );
             }
 
             (Some(watcher), Some(rx))
@@ -281,7 +286,8 @@ impl App {
     /// Get the currently visible clip IDs (either search results or all history)
     /// Applies both search filtering and register filtering
     pub fn visible_clips(&self) -> Vec<u64> {
-        let base_clips: Vec<u64> = if self.search_results.is_empty() && self.search_query.is_empty() {
+        let base_clips: Vec<u64> = if self.search_results.is_empty() && self.search_query.is_empty()
+        {
             // Show all clips in chronological order (newest first)
             self.history.entries().iter().map(|e| e.id).collect()
         } else {
@@ -292,24 +298,26 @@ impl App {
         // Apply register filter if active
         match self.register_filter {
             RegisterFilter::None => base_clips,
-            RegisterFilter::Temporary => {
-                base_clips.into_iter().filter(|&id| {
+            RegisterFilter::Temporary => base_clips
+                .into_iter()
+                .filter(|&id| {
                     if let Some(entry) = self.history.get_entry(id) {
                         !entry.temporary_registers.is_empty()
                     } else {
                         false
                     }
-                }).collect()
-            }
-            RegisterFilter::Permanent => {
-                base_clips.into_iter().filter(|&id| {
+                })
+                .collect(),
+            RegisterFilter::Permanent => base_clips
+                .into_iter()
+                .filter(|&id| {
                     if let Some(entry) = self.history.get_entry(id) {
                         !entry.permanent_registers.is_empty()
                     } else {
                         false
                     }
-                }).collect()
-            }
+                })
+                .collect(),
         }
     }
 
@@ -391,10 +399,9 @@ impl App {
         }
 
         // Perform fuzzy search
-        let results = self.search_index.search(
-            self.history.entries(),
-            &self.search_query,
-        );
+        let results = self
+            .search_index
+            .search(self.history.entries(), &self.search_query);
 
         // Extract just the clip IDs
         self.search_results = results.into_iter().map(|(id, _score)| id).collect();
@@ -406,9 +413,7 @@ impl App {
 
     /// Select the currently highlighted entry and copy to clipboard
     pub fn select_entry(&mut self) -> Result<()> {
-        let clip_id = self
-            .selected_clip_id()
-            .context("No clip selected")?;
+        let clip_id = self.selected_clip_id().context("No clip selected")?;
 
         let entry = self
             .history
@@ -440,9 +445,7 @@ impl App {
 
     /// Toggle pin status of currently selected clip
     pub fn toggle_pin(&mut self) -> Result<()> {
-        let clip_id = self
-            .selected_clip_id()
-            .context("No clip selected")?;
+        let clip_id = self.selected_clip_id().context("No clip selected")?;
 
         self.history.toggle_pin(clip_id)?;
 
@@ -452,9 +455,7 @@ impl App {
     /// Delete the currently selected clip
     /// Cannot delete clips with permanent registers
     pub fn delete_entry(&mut self) -> Result<()> {
-        let clip_id = self
-            .selected_clip_id()
-            .context("No clip selected")?;
+        let clip_id = self.selected_clip_id().context("No clip selected")?;
 
         // Check if clip can be deleted (no permanent registers)
         let entry = self
@@ -528,14 +529,20 @@ impl App {
 
     /// Enter search mode
     pub fn enter_search_mode(&mut self) {
+        // Enter search mode, keeping existing query if present
+        // This allows re-entering search to refine the filter
         self.mode = AppMode::Search;
-        self.search_query.clear();
-        self.search_results.clear();
     }
 
     /// Exit search mode back to normal
     pub fn exit_search_mode(&mut self) {
+        // Exit search mode but keep the search query and results
+        // This allows users to navigate and manipulate filtered results
         self.mode = AppMode::Normal;
+    }
+
+    /// Clear search query and results, returning to full history
+    pub fn clear_search(&mut self) {
         self.search_query.clear();
         self.search_results.clear();
         self.selected_index = 0;
@@ -563,9 +570,7 @@ impl App {
     /// Toggle temporary register assignment for current clip
     /// If the clip already has the register, remove it; otherwise add it
     pub fn assign_register(&mut self, key: char) -> Result<()> {
-        let clip_id = self
-            .selected_clip_id()
-            .context("No clip selected")?;
+        let clip_id = self.selected_clip_id().context("No clip selected")?;
 
         // Check if the current clip already has this register
         let clip_has_register = self
@@ -579,7 +584,8 @@ impl App {
             self.registers.remove_temporary(key, &mut self.history)?;
         } else {
             // Add to temporary registry (this updates both the registry and the clip)
-            self.registers.assign_temporary(key, clip_id, &mut self.history)?;
+            self.registers
+                .assign_temporary(key, clip_id, &mut self.history)?;
         }
 
         // Exit register mode
@@ -664,8 +670,10 @@ impl App {
             }
             Err(e) => {
                 // Keep previous theme, show error modal
-                let error_msg = format!("Failed to reload theme '{}':\n{}",
-                    self.config.general.theme, e);
+                let error_msg = format!(
+                    "Failed to reload theme '{}':\n{}",
+                    self.config.general.theme, e
+                );
                 log::error!("{}", error_msg);
                 self.startup_error = Some(error_msg);
                 Err(e)
@@ -734,10 +742,10 @@ impl App {
             }
 
             // Vim navigation (simple - no numeric prefix in Normal mode)
-            KeyCode::Char('j') => {
+            KeyCode::Char('j') | KeyCode::Down => {
                 self.move_down(1);
             }
-            KeyCode::Char('k') => {
+            KeyCode::Char('k') | KeyCode::Up => {
                 self.move_up(1);
             }
             KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -819,8 +827,10 @@ impl App {
                 self.quit();
             }
             KeyCode::Esc => {
-                // ESC clears filter first, then quits
-                if self.register_filter != RegisterFilter::None {
+                // ESC clears filters in order: search filter, register filter, then quit
+                if !self.search_query.is_empty() {
+                    self.clear_search();
+                } else if self.register_filter != RegisterFilter::None {
                     self.register_filter = RegisterFilter::None;
                     self.selected_index = 0;
                 } else {
@@ -993,7 +1003,10 @@ impl App {
             return;
         }
 
-        let current_idx = themes.iter().position(|t| t == &self.current_theme_name).unwrap_or(0);
+        let current_idx = themes
+            .iter()
+            .position(|t| t == &self.current_theme_name)
+            .unwrap_or(0);
         let next_idx = (current_idx + 1) % themes.len();
         let next_theme_name = &themes[next_idx];
 
@@ -1003,7 +1016,8 @@ impl App {
                 self.current_theme_name = next_theme_name.clone();
             }
             Err(e) => {
-                self.startup_error = Some(format!("Failed to load theme '{}': {}", next_theme_name, e));
+                self.startup_error =
+                    Some(format!("Failed to load theme '{}': {}", next_theme_name, e));
             }
         }
     }
@@ -1023,7 +1037,8 @@ impl App {
     pub fn open_theme_picker(&mut self) {
         self.theme_picker_themes = Theme::get_all_theme_names();
         // Find current theme index
-        self.theme_picker_selected = self.theme_picker_themes
+        self.theme_picker_selected = self
+            .theme_picker_themes
             .iter()
             .position(|t| t == &self.current_theme_name)
             .unwrap_or(0);
@@ -1041,7 +1056,8 @@ impl App {
                     self.mode = AppMode::Normal;
                 }
                 Err(e) => {
-                    self.startup_error = Some(format!("Failed to load theme '{}': {}", theme_name, e));
+                    self.startup_error =
+                        Some(format!("Failed to load theme '{}': {}", theme_name, e));
                     self.mode = AppMode::Normal;
                 }
             }
@@ -1054,9 +1070,8 @@ impl App {
 
         // Set themed background for entire frame
         frame.render_widget(
-            ratatui::widgets::Block::default().style(
-                ratatui::prelude::Style::default().bg(self.theme.default_bg)
-            ),
+            ratatui::widgets::Block::default()
+                .style(ratatui::prelude::Style::default().bg(self.theme.default_bg)),
             size,
         );
 
@@ -1096,7 +1111,8 @@ impl App {
         ui::render_divider(frame, divider_area, self.view_mode, &self.theme);
 
         // Render preview for selected clip
-        let selected_entry = self.selected_clip_id()
+        let selected_entry = self
+            .selected_clip_id()
             .and_then(|id| self.history.get_entry(id));
 
         // Get cached image if available for current selection
