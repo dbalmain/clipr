@@ -1,14 +1,12 @@
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Clear, Paragraph, Wrap};
 
-use super::layout::centered_rect;
 use super::Theme;
+use super::layout::centered_rect;
 
 /// Render help overlay with keybindings
 pub fn render_help_overlay(frame: &mut Frame, area: Rect, theme: &Theme) {
     let help_text = r#" Help
-
- CLIPR KEYBINDINGS
 
  Navigation:
    j/k         Move down/up

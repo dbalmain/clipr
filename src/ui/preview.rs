@@ -86,7 +86,7 @@ pub fn render_preview(
         // Only render text content if we didn't render an image
         if !image_rendered {
             let content_para = Paragraph::new(content_lines)
-                .style(theme.preview_text)
+                .style(theme.preview_text.bg(theme.preview_bg))
                 .wrap(Wrap { trim: false });
             frame.render_widget(content_para, content_area);
         }
@@ -177,12 +177,12 @@ pub fn render_preview(
             metadata_lines.push(Line::from(""));
         }
 
-            let metadata_para = Paragraph::new(metadata_lines);
+            let metadata_para = Paragraph::new(metadata_lines).style(Style::default().bg(theme.preview_bg));
             frame.render_widget(metadata_para, metadata_area);
         }
     } else {
         let msg = Paragraph::new("No selection")
-            .style(theme.preview_metadata_label);
+            .style(theme.preview_metadata_label.bg(theme.preview_bg));
         frame.render_widget(msg, area);
     }
 }

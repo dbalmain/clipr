@@ -4,6 +4,7 @@ use std::collections::{hash_map::DefaultHasher, HashMap};
 use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 use std::time::SystemTime;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 /// Content type for clipboard entries
 #[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode, PartialEq)]
@@ -22,8 +23,26 @@ impl ClipContent {
         match self {
             ClipContent::Text(text) => {
                 let preview = text.lines().next().unwrap_or("");
-                if preview.len() > max_len {
-                    format!("{}...", &preview[..max_len])
+                let preview_width = preview.width();
+
+                if preview_width > max_len {
+                    // Need to truncate - reserve 3 chars for "..."
+                    let target_width = max_len.saturating_sub(3);
+
+                    // Find the character boundary that fits within target_width
+                    let mut current_width = 0;
+                    let mut byte_pos = 0;
+
+                    for (pos, ch) in preview.char_indices() {
+                        let ch_width = ch.width().unwrap_or(0);
+                        if current_width + ch_width > target_width {
+                            break;
+                        }
+                        current_width += ch_width;
+                        byte_pos = pos + ch.len_utf8();
+                    }
+
+                    format!("{}...", &preview[..byte_pos])
                 } else {
                     preview.to_string()
                 }

@@ -73,9 +73,19 @@ pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode, theme
                 Span::raw(" cancel"),
             ]
         }
+        AppMode::ThemePicker => {
+            vec![
+                Span::styled("j/k", theme.status_key),
+                Span::raw(" navigate  "),
+                Span::styled("Enter", theme.status_key),
+                Span::raw(" select  "),
+                Span::styled("Esc", theme.status_key),
+                Span::raw(" cancel"),
+            ]
+        }
     };
 
-    let paragraph = Paragraph::new(Line::from(hints)).style(theme.status_desc);
+    let paragraph = Paragraph::new(Line::from(hints)).style(theme.status_desc.bg(theme.status_bar_bg));
 
     frame.render_widget(paragraph, area);
 }

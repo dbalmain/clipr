@@ -6,6 +6,7 @@ pub mod preview;
 pub mod search;
 pub mod status;
 pub mod theme;
+pub mod theme_picker;
 
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Clear, Paragraph};
@@ -18,26 +19,35 @@ pub use preview::render_preview;
 pub use search::render_search_input;
 pub use status::render_keyboard_hints;
 pub use theme::{BuiltInTheme, Theme};
+pub use theme_picker::render_theme_picker;
 
 /// Render vertical divider line between history and preview panels
-/// In comfortable mode, renders empty space (3 chars wide)
-/// In compact mode, renders a single vertical line
-pub fn render_divider(frame: &mut Frame, area: Rect, view_mode: crate::app::ViewMode, theme: &Theme) {
+/// In comfortable mode, renders empty space (3 chars wide) or custom divider if specified
+/// In compact mode, renders a single vertical line or custom divider if specified
+pub fn render_divider(
+    frame: &mut Frame,
+    area: Rect,
+    view_mode: crate::app::ViewMode,
+    theme: &Theme,
+) {
     use crate::app::ViewMode;
 
-    // Only render divider line in compact mode
-    // In comfortable mode, the area is just empty space
-    if matches!(view_mode, ViewMode::Compact) {
-        let divider_char = "│";
+    // Get the appropriate divider character based on view mode
+    let divider_char = match view_mode {
+        ViewMode::Compact => theme.divider_compact.as_deref(),
+        ViewMode::Comfortable => theme.divider_comfortable.as_deref(),
+    };
 
+    // Only render if there's a divider character specified
+    if let Some(divider) = divider_char {
         let lines: Vec<Line> = (0..area.height)
-            .map(|_| Line::from(Span::styled(divider_char, theme.divider)))
+            .map(|_| Line::from(Span::styled(divider, theme.divider_style)))
             .collect();
 
         let paragraph = Paragraph::new(lines);
         frame.render_widget(paragraph, area);
     }
-    // In comfortable mode, don't render anything (just empty space)
+    // Otherwise, don't render anything (just empty space)
 }
 
 /// Render confirmation dialog overlay for clear all operation

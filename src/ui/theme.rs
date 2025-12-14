@@ -56,7 +56,8 @@ pub struct Theme {
     pub search_bg: Color,
 
     // === Indicators ===
-    pub selection_indicator: Option<String>,
+    pub selection_indicator_compact: Option<String>,
+    pub selection_indicator_comfortable: Option<String>,
     pub selection_indicator_style: Style,
     pub pin_indicator: String,
     pub pin_indicator_style: Style,
@@ -69,6 +70,7 @@ pub struct Theme {
     pub perm_register: Style,
     pub timestamp: Style,
     pub clip_list_header: Style,
+    pub clip_list_item_count: Style,
 
     // === Preview Panel ===
     pub preview_text: Style,
@@ -103,8 +105,10 @@ pub struct Theme {
     pub confirm_text: Style,
     pub confirm_key: Style,
 
-    // === Other UI ===
-    pub divider: Style,
+    // === Divider ===
+    pub divider_compact: Option<String>,
+    pub divider_comfortable: Option<String>,
+    pub divider_style: Style,
 }
 
 impl Default for Theme {
@@ -139,7 +143,8 @@ impl Theme {
             search_bg: bg,
 
             // Indicators
-            selection_indicator: None,
+            selection_indicator_compact: None,
+            selection_indicator_comfortable: None,
             selection_indicator_style: Style::default().fg(Color::Rgb(137, 180, 250)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(249, 226, 175)),
@@ -156,6 +161,7 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(245, 194, 231)),
             timestamp: Style::default().fg(Color::Rgb(166, 173, 200)),
             clip_list_header: Style::default().fg(Color::Rgb(166, 173, 200)),
+            clip_list_item_count: Style::default().fg(Color::Rgb(166, 173, 200)).add_modifier(Modifier::DIM),
 
             // Preview
             preview_text: Style::default().fg(fg),
@@ -202,8 +208,10 @@ impl Theme {
                 .fg(Color::Rgb(137, 220, 235))
                 .add_modifier(Modifier::BOLD),
 
-            // Other
-            divider: Style::default().fg(Color::Rgb(108, 112, 134)),
+            // Divider
+            divider_compact: Some("│".to_string()),
+            divider_comfortable: None,
+            divider_style: Style::default().fg(Color::Rgb(108, 112, 134)),
         }
     }
 
@@ -227,7 +235,8 @@ impl Theme {
             status_bar_bg: Color::Rgb(188, 192, 204),
             search_bg: bg,
 
-            selection_indicator: None,
+            selection_indicator_compact: None,
+            selection_indicator_comfortable: None,
             selection_indicator_style: Style::default().fg(Color::Rgb(30, 102, 245)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(223, 142, 29)),
@@ -243,6 +252,7 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(234, 118, 203)),
             timestamp: Style::default().fg(Color::Rgb(108, 111, 133)),
             clip_list_header: Style::default().fg(Color::Rgb(108, 111, 133)),
+            clip_list_item_count: Style::default().fg(Color::Rgb(108, 111, 133)).add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
             preview_loading: Style::default().fg(Color::Rgb(108, 111, 133)),
@@ -283,7 +293,9 @@ impl Theme {
                 .fg(Color::Rgb(4, 165, 229))
                 .add_modifier(Modifier::BOLD),
 
-            divider: Style::default().fg(Color::Rgb(156, 160, 176)),
+            divider_compact: Some("│".to_string()),
+            divider_comfortable: None,
+            divider_style: Style::default().fg(Color::Rgb(156, 160, 176)),
         }
     }
 
@@ -307,7 +319,8 @@ impl Theme {
             status_bar_bg: Color::Rgb(36, 40, 59),
             search_bg: bg,
 
-            selection_indicator: None,
+            selection_indicator_compact: None,
+            selection_indicator_comfortable: None,
             selection_indicator_style: Style::default().fg(Color::Rgb(125, 207, 255)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(224, 175, 104)),
@@ -323,6 +336,7 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(187, 154, 247)),
             timestamp: Style::default().fg(Color::Rgb(169, 177, 214)),
             clip_list_header: Style::default().fg(Color::Rgb(169, 177, 214)),
+            clip_list_item_count: Style::default().fg(Color::Rgb(169, 177, 214)).add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
             preview_loading: Style::default().fg(Color::Rgb(169, 177, 214)),
@@ -363,7 +377,9 @@ impl Theme {
                 .fg(Color::Rgb(125, 207, 255))
                 .add_modifier(Modifier::BOLD),
 
-            divider: Style::default().fg(Color::Rgb(68, 75, 106)),
+            divider_compact: Some("│".to_string()),
+            divider_comfortable: None,
+            divider_style: Style::default().fg(Color::Rgb(68, 75, 106)),
         }
     }
 
@@ -387,7 +403,8 @@ impl Theme {
             status_bar_bg: Color::Rgb(36, 40, 59),
             search_bg: bg,
 
-            selection_indicator: None,
+            selection_indicator_compact: None,
+            selection_indicator_comfortable: None,
             selection_indicator_style: Style::default().fg(Color::Rgb(125, 207, 255)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(224, 175, 104)),
@@ -403,6 +420,7 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(187, 154, 247)),
             timestamp: Style::default().fg(Color::Rgb(169, 177, 214)),
             clip_list_header: Style::default().fg(Color::Rgb(169, 177, 214)),
+            clip_list_item_count: Style::default().fg(Color::Rgb(169, 177, 214)).add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
             preview_loading: Style::default().fg(Color::Rgb(169, 177, 214)),
@@ -443,7 +461,9 @@ impl Theme {
                 .fg(Color::Rgb(125, 207, 255))
                 .add_modifier(Modifier::BOLD),
 
-            divider: Style::default().fg(Color::Rgb(68, 75, 106)),
+            divider_compact: Some("│".to_string()),
+            divider_comfortable: None,
+            divider_style: Style::default().fg(Color::Rgb(68, 75, 106)),
         }
     }
 
@@ -467,7 +487,8 @@ impl Theme {
             status_bar_bg: Color::Rgb(214, 219, 237),
             search_bg: bg,
 
-            selection_indicator: None,
+            selection_indicator_compact: None,
+            selection_indicator_comfortable: None,
             selection_indicator_style: Style::default().fg(Color::Rgb(34, 94, 168)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(150, 80, 0)),
@@ -483,6 +504,7 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(136, 57, 239)),
             timestamp: Style::default().fg(Color::Rgb(78, 89, 131)),
             clip_list_header: Style::default().fg(Color::Rgb(78, 89, 131)),
+            clip_list_item_count: Style::default().fg(Color::Rgb(78, 89, 131)).add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
             preview_loading: Style::default().fg(Color::Rgb(78, 89, 131)),
@@ -523,43 +545,42 @@ impl Theme {
                 .fg(Color::Rgb(34, 94, 168))
                 .add_modifier(Modifier::BOLD),
 
-            divider: Style::default().fg(Color::Rgb(165, 173, 203)),
+            divider_compact: Some("│".to_string()),
+            divider_comfortable: None,
+            divider_style: Style::default().fg(Color::Rgb(165, 173, 203)),
         }
     }
 
-    /// Load theme by name (built-in or custom)
+    /// Load theme by name (custom overrides built-in)
     pub fn load(name: &str) -> Result<Self> {
-        // Try built-in theme first
+        // Try loading custom theme from file first (custom themes override built-in)
+        let config_dir = get_config_dir()?;
+        let theme_path = config_dir.join("themes").join(format!("{}.toml", name));
+
+        if theme_path.exists() {
+            return Self::load_from_file(&theme_path);
+        }
+
+        // Fall back to built-in theme
         if let Some(built_in) = BuiltInTheme::from_name(name) {
             return Ok(built_in.to_theme());
         }
 
-        // Try loading custom theme from file
-        let config_dir = get_config_dir()?;
-        let theme_path = config_dir.join("themes").join(format!("{}.toml", name));
-
-        if !theme_path.exists() {
-            return Err(anyhow!(
-                "Unknown theme '{}'. Available built-in themes: {}",
-                name,
-                BuiltInTheme::all()
-                    .iter()
-                    .map(|t| t.name())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            ));
-        }
-
-        Self::load_from_file(&theme_path)
+        // Theme not found
+        Err(anyhow!(
+            "Unknown theme '{}'. Available built-in themes: {}",
+            name,
+            BuiltInTheme::all()
+                .iter()
+                .map(|t| t.name())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ))
     }
 
-    /// Get the path to a theme file (for custom themes only, returns None for built-in)
+    /// Get the path to a theme file
+    /// Returns the custom theme path if it exists, or potential path for creating one
     pub fn get_theme_path(name: &str) -> Result<PathBuf> {
-        // Built-in themes don't have files
-        if BuiltInTheme::from_name(name).is_some() {
-            return Err(anyhow!("Built-in theme '{}' does not have a file path", name));
-        }
-
         let config_dir = get_config_dir()?;
         let theme_path = config_dir.join("themes").join(format!("{}.toml", name));
         Ok(theme_path)
@@ -606,12 +627,18 @@ impl Theme {
         }
 
         // Apply indicators
-        if let Some(selection) = &def.indicators.selection {
-            theme.selection_indicator = Some(selection.clone());
+        if let Some(selection) = &def.indicators.selection_compact {
+            theme.selection_indicator_compact = Some(selection.clone());
+        }
+        if let Some(selection) = &def.indicators.selection_comfortable {
+            theme.selection_indicator_comfortable = Some(selection.clone());
         }
         if let Some(pin) = &def.indicators.pin {
             theme.pin_indicator = pin.clone();
         }
+        // Unconditionally set divider fields (will be None if not in TOML)
+        theme.divider_compact = def.indicators.divider_compact.clone();
+        theme.divider_comfortable = def.indicators.divider_comfortable.clone();
 
         // Apply element styles
         for (key, style_def) in &def.elements {
@@ -628,6 +655,7 @@ impl Theme {
                 "perm_register" => theme.perm_register = style,
                 "timestamp" => theme.timestamp = style,
                 "clip_list_header" => theme.clip_list_header = style,
+                "clip_list_item_count" => theme.clip_list_item_count = style,
                 "preview_text" => theme.preview_text = style,
                 "preview_loading" => theme.preview_loading = style,
                 "preview_file_label" => theme.preview_file_label = style,
@@ -649,7 +677,7 @@ impl Theme {
                 "error_border" => theme.error_border = style,
                 "confirm_text" => theme.confirm_text = style,
                 "confirm_key" => theme.confirm_key = style,
-                "divider" => theme.divider = style,
+                "divider_style" => theme.divider_style = style,
                 _ => {} // Ignore unknown elements
             }
         }
@@ -687,6 +715,24 @@ impl Theme {
             if style.add_modifier.contains(Modifier::UNDERLINED) {
                 parts.push("underline = true".to_string());
             }
+            if style.add_modifier.contains(Modifier::DIM) {
+                parts.push("dim = true".to_string());
+            }
+            if style.add_modifier.contains(Modifier::SLOW_BLINK) {
+                parts.push("slow_blink = true".to_string());
+            }
+            if style.add_modifier.contains(Modifier::RAPID_BLINK) {
+                parts.push("rapid_blink = true".to_string());
+            }
+            if style.add_modifier.contains(Modifier::REVERSED) {
+                parts.push("reversed = true".to_string());
+            }
+            if style.add_modifier.contains(Modifier::HIDDEN) {
+                parts.push("hidden = true".to_string());
+            }
+            if style.add_modifier.contains(Modifier::CROSSED_OUT) {
+                parts.push("crossed_out = true".to_string());
+            }
 
             if parts.is_empty() {
                 "{}".to_string()
@@ -701,57 +747,174 @@ impl Theme {
         output.push_str(&format!("default_bg = {}\n", fmt_rgb(self.default_bg)));
         output.push_str(&format!("clip_list_bg = {}\n", fmt_rgb(self.clip_list_bg)));
         output.push_str(&format!("preview_bg = {}\n", fmt_rgb(self.preview_bg)));
-        output.push_str(&format!("help_modal_bg = {}\n", fmt_rgb(self.help_modal_bg)));
-        output.push_str(&format!("error_modal_bg = {}\n", fmt_rgb(self.error_modal_bg)));
-        output.push_str(&format!("confirm_modal_bg = {}\n", fmt_rgb(self.confirm_modal_bg)));
+        output.push_str(&format!(
+            "help_modal_bg = {}\n",
+            fmt_rgb(self.help_modal_bg)
+        ));
+        output.push_str(&format!(
+            "error_modal_bg = {}\n",
+            fmt_rgb(self.error_modal_bg)
+        ));
+        output.push_str(&format!(
+            "confirm_modal_bg = {}\n",
+            fmt_rgb(self.confirm_modal_bg)
+        ));
         output.push_str(&format!("selection_bg = {}\n", fmt_rgb(self.selection_bg)));
-        output.push_str(&format!("status_bar_bg = {}\n", fmt_rgb(self.status_bar_bg)));
+        output.push_str(&format!(
+            "status_bar_bg = {}\n",
+            fmt_rgb(self.status_bar_bg)
+        ));
         output.push_str(&format!("search_bg = {}\n", fmt_rgb(self.search_bg)));
         output.push('\n');
 
         // Indicators section
         output.push_str("[indicators]\n");
-        if let Some(ref sel) = self.selection_indicator {
-            output.push_str(&format!("selection = \"{}\"\n", sel));
+        if let Some(ref sel) = self.selection_indicator_compact {
+            output.push_str(&format!("selection_compact = \"{}\"\n", sel));
+        }
+        if let Some(ref sel) = self.selection_indicator_comfortable {
+            output.push_str(&format!("selection_comfortable = \"{}\"\n", sel));
         }
         output.push_str(&format!("pin = \"{}\"\n", self.pin_indicator));
+        if let Some(ref div) = self.divider_compact {
+            output.push_str(&format!("divider_compact = \"{}\"\n", div));
+        }
+        if let Some(ref div) = self.divider_comfortable {
+            output.push_str(&format!("divider_comfortable = \"{}\"\n", div));
+        }
         output.push('\n');
 
         // Elements section
         output.push_str("[elements]\n");
-        output.push_str(&format!("selection_indicator_style = {}\n", fmt_style(self.selection_indicator_style)));
-        output.push_str(&format!("pin_indicator_style = {}\n", fmt_style(self.pin_indicator_style)));
+        output.push_str(&format!(
+            "selection_indicator_style = {}\n",
+            fmt_style(self.selection_indicator_style)
+        ));
+        output.push_str(&format!(
+            "pin_indicator_style = {}\n",
+            fmt_style(self.pin_indicator_style)
+        ));
         output.push_str(&format!("clip_number = {}\n", fmt_style(self.clip_number)));
         output.push_str(&format!("clip_text = {}\n", fmt_style(self.clip_text)));
-        output.push_str(&format!("clip_text_selected = {}\n", fmt_style(self.clip_text_selected)));
-        output.push_str(&format!("temp_register = {}\n", fmt_style(self.temp_register)));
-        output.push_str(&format!("perm_register = {}\n", fmt_style(self.perm_register)));
+        output.push_str(&format!(
+            "clip_text_selected = {}\n",
+            fmt_style(self.clip_text_selected)
+        ));
+        output.push_str(&format!(
+            "temp_register = {}\n",
+            fmt_style(self.temp_register)
+        ));
+        output.push_str(&format!(
+            "perm_register = {}\n",
+            fmt_style(self.perm_register)
+        ));
         output.push_str(&format!("timestamp = {}\n", fmt_style(self.timestamp)));
-        output.push_str(&format!("clip_list_header = {}\n", fmt_style(self.clip_list_header)));
-        output.push_str(&format!("preview_text = {}\n", fmt_style(self.preview_text)));
-        output.push_str(&format!("preview_loading = {}\n", fmt_style(self.preview_loading)));
-        output.push_str(&format!("preview_file_label = {}\n", fmt_style(self.preview_file_label)));
-        output.push_str(&format!("preview_metadata_label = {}\n", fmt_style(self.preview_metadata_label)));
-        output.push_str(&format!("preview_metadata_value = {}\n", fmt_style(self.preview_metadata_value)));
+        output.push_str(&format!(
+            "clip_list_header = {}\n",
+            fmt_style(self.clip_list_header)
+        ));
+        output.push_str(&format!(
+            "clip_list_item_count = {}\n",
+            fmt_style(self.clip_list_item_count)
+        ));
+        output.push_str(&format!(
+            "preview_text = {}\n",
+            fmt_style(self.preview_text)
+        ));
+        output.push_str(&format!(
+            "preview_loading = {}\n",
+            fmt_style(self.preview_loading)
+        ));
+        output.push_str(&format!(
+            "preview_file_label = {}\n",
+            fmt_style(self.preview_file_label)
+        ));
+        output.push_str(&format!(
+            "preview_metadata_label = {}\n",
+            fmt_style(self.preview_metadata_label)
+        ));
+        output.push_str(&format!(
+            "preview_metadata_value = {}\n",
+            fmt_style(self.preview_metadata_value)
+        ));
         output.push_str(&format!("status_key = {}\n", fmt_style(self.status_key)));
         output.push_str(&format!("status_desc = {}\n", fmt_style(self.status_desc)));
-        output.push_str(&format!("search_input = {}\n", fmt_style(self.search_input)));
-        output.push_str(&format!("search_border = {}\n", fmt_style(self.search_border)));
-        output.push_str(&format!("search_title = {}\n", fmt_style(self.search_title)));
+        output.push_str(&format!(
+            "search_input = {}\n",
+            fmt_style(self.search_input)
+        ));
+        output.push_str(&format!(
+            "search_border = {}\n",
+            fmt_style(self.search_border)
+        ));
+        output.push_str(&format!(
+            "search_title = {}\n",
+            fmt_style(self.search_title)
+        ));
         output.push_str(&format!("help_title = {}\n", fmt_style(self.help_title)));
-        output.push_str(&format!("help_header_main = {}\n", fmt_style(self.help_header_main)));
-        output.push_str(&format!("help_header_section = {}\n", fmt_style(self.help_header_section)));
+        output.push_str(&format!(
+            "help_header_main = {}\n",
+            fmt_style(self.help_header_main)
+        ));
+        output.push_str(&format!(
+            "help_header_section = {}\n",
+            fmt_style(self.help_header_section)
+        ));
         output.push_str(&format!("help_key = {}\n", fmt_style(self.help_key)));
         output.push_str(&format!("help_desc = {}\n", fmt_style(self.help_desc)));
         output.push_str(&format!("help_footer = {}\n", fmt_style(self.help_footer)));
         output.push_str(&format!("error_title = {}\n", fmt_style(self.error_title)));
         output.push_str(&format!("error_text = {}\n", fmt_style(self.error_text)));
-        output.push_str(&format!("error_border = {}\n", fmt_style(self.error_border)));
-        output.push_str(&format!("confirm_text = {}\n", fmt_style(self.confirm_text)));
+        output.push_str(&format!(
+            "error_border = {}\n",
+            fmt_style(self.error_border)
+        ));
+        output.push_str(&format!(
+            "confirm_text = {}\n",
+            fmt_style(self.confirm_text)
+        ));
         output.push_str(&format!("confirm_key = {}\n", fmt_style(self.confirm_key)));
-        output.push_str(&format!("divider = {}\n", fmt_style(self.divider)));
+        output.push_str(&format!(
+            "divider_style = {}\n",
+            fmt_style(self.divider_style)
+        ));
 
         output
+    }
+
+    /// Get all available theme names (built-in + custom from filesystem)
+    pub fn get_all_theme_names() -> Vec<String> {
+        let mut themes = Vec::new();
+
+        // Add all built-in themes
+        for builtin in BuiltInTheme::all() {
+            themes.push(builtin.name().to_string());
+        }
+
+        // Add custom themes from ~/.config/clipr/themes/
+        if let Ok(config_dir) = get_config_dir() {
+            let themes_dir = config_dir.join("themes");
+            if let Ok(entries) = fs::read_dir(&themes_dir) {
+                for entry in entries.flatten() {
+                    if let Ok(file_type) = entry.file_type() {
+                        if file_type.is_file() {
+                            if let Some(name) = entry.file_name().to_str() {
+                                if name.ends_with(".toml") {
+                                    let theme_name = name.trim_end_matches(".toml");
+                                    // Only add if not already in built-in list
+                                    if !themes.contains(&theme_name.to_string()) {
+                                        themes.push(theme_name.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        themes.sort();
+        themes
     }
 }
 
@@ -829,8 +992,11 @@ pub struct ThemeDefinition {
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct IndicatorsDef {
-    pub selection: Option<String>,
+    pub selection_compact: Option<String>,
+    pub selection_comfortable: Option<String>,
     pub pin: Option<String>,
+    pub divider_compact: Option<String>,
+    pub divider_comfortable: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -853,6 +1019,18 @@ pub enum StyleDef {
         italic: bool,
         #[serde(default)]
         underline: bool,
+        #[serde(default)]
+        dim: bool,
+        #[serde(default)]
+        slow_blink: bool,
+        #[serde(default)]
+        rapid_blink: bool,
+        #[serde(default)]
+        reversed: bool,
+        #[serde(default)]
+        hidden: bool,
+        #[serde(default)]
+        crossed_out: bool,
     },
 }
 
@@ -869,6 +1047,18 @@ pub enum ElementStyleDef {
         italic: bool,
         #[serde(default)]
         underline: bool,
+        #[serde(default)]
+        dim: bool,
+        #[serde(default)]
+        slow_blink: bool,
+        #[serde(default)]
+        rapid_blink: bool,
+        #[serde(default)]
+        reversed: bool,
+        #[serde(default)]
+        hidden: bool,
+        #[serde(default)]
+        crossed_out: bool,
     },
 }
 
@@ -880,7 +1070,6 @@ fn resolve_color_in_def(value: &ColorValue, def: &ThemeDefinition) -> Result<Col
             Ok(Color::Rgb(rgb[0], rgb[1], rgb[2]))
         }
         ColorValue::Reference(name) => {
-            let name = name.strip_prefix('$').unwrap_or(name);
             let color_val = def
                 .colors
                 .get(name)
@@ -898,7 +1087,6 @@ fn resolve_element_style(
 ) -> Result<Style> {
     match style_def {
         ElementStyleDef::Reference(name) => {
-            let name = name.strip_prefix('$').unwrap_or(name);
             let style = def
                 .styles
                 .get(name)
@@ -911,6 +1099,12 @@ fn resolve_element_style(
             bold,
             italic,
             underline,
+            dim,
+            slow_blink,
+            rapid_blink,
+            reversed,
+            hidden,
+            crossed_out,
         } => {
             let mut style = default;
             if let Some(fg_val) = fg {
@@ -928,6 +1122,24 @@ fn resolve_element_style(
             if *underline {
                 style = style.add_modifier(Modifier::UNDERLINED);
             }
+            if *dim {
+                style = style.add_modifier(Modifier::DIM);
+            }
+            if *slow_blink {
+                style = style.add_modifier(Modifier::SLOW_BLINK);
+            }
+            if *rapid_blink {
+                style = style.add_modifier(Modifier::RAPID_BLINK);
+            }
+            if *reversed {
+                style = style.add_modifier(Modifier::REVERSED);
+            }
+            if *hidden {
+                style = style.add_modifier(Modifier::HIDDEN);
+            }
+            if *crossed_out {
+                style = style.add_modifier(Modifier::CROSSED_OUT);
+            }
             Ok(style)
         }
     }
@@ -937,7 +1149,6 @@ fn resolve_element_style(
 fn resolve_style_def(style_def: &StyleDef, default: Style, def: &ThemeDefinition) -> Result<Style> {
     match style_def {
         StyleDef::Reference(name) => {
-            let name = name.strip_prefix('$').unwrap_or(name);
             let style = def
                 .styles
                 .get(name)
@@ -950,6 +1161,12 @@ fn resolve_style_def(style_def: &StyleDef, default: Style, def: &ThemeDefinition
             bold,
             italic,
             underline,
+            dim,
+            slow_blink,
+            rapid_blink,
+            reversed,
+            hidden,
+            crossed_out,
         } => {
             let mut style = default;
             if let Some(fg_val) = fg {
@@ -966,6 +1183,24 @@ fn resolve_style_def(style_def: &StyleDef, default: Style, def: &ThemeDefinition
             }
             if *underline {
                 style = style.add_modifier(Modifier::UNDERLINED);
+            }
+            if *dim {
+                style = style.add_modifier(Modifier::DIM);
+            }
+            if *slow_blink {
+                style = style.add_modifier(Modifier::SLOW_BLINK);
+            }
+            if *rapid_blink {
+                style = style.add_modifier(Modifier::RAPID_BLINK);
+            }
+            if *reversed {
+                style = style.add_modifier(Modifier::REVERSED);
+            }
+            if *hidden {
+                style = style.add_modifier(Modifier::HIDDEN);
+            }
+            if *crossed_out {
+                style = style.add_modifier(Modifier::CROSSED_OUT);
             }
             Ok(style)
         }

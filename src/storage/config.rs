@@ -20,6 +20,32 @@ impl Config {
             permanent_registers: HashMap::new(),
         }
     }
+
+    /// Save configuration to file
+    pub fn save(&self) -> Result<()> {
+        use anyhow::Context;
+        use std::fs;
+        use std::env;
+
+        // Get config directory path
+        let home = env::var("HOME").context("HOME environment variable not set")?;
+        let home_path = PathBuf::from(home);
+        let config_dir = if let Ok(xdg_config) = env::var("XDG_CONFIG_HOME") {
+            PathBuf::from(xdg_config).join("clipr")
+        } else {
+            home_path.join(".config").join("clipr")
+        };
+
+        let config_path = config_dir.join("clipr.toml");
+
+        let toml_string = toml::to_string_pretty(self)
+            .context("Failed to serialize config to TOML")?;
+
+        fs::write(&config_path, toml_string)
+            .context(format!("Failed to write config file: {}", config_path.display()))?;
+
+        Ok(())
+    }
 }
 
 /// General configuration settings

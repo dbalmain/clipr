@@ -17,11 +17,12 @@ pub fn render_search_input(frame: &mut Frame, area: Rect, query: &str, theme: &T
     let block = Block::default()
         .borders(Borders::ALL)
         .title("Search (Esc to cancel, Enter to select)")
-        .padding(ratatui::widgets::Padding::horizontal(1));
+        .padding(ratatui::widgets::Padding::horizontal(1))
+        .style(Style::default().bg(theme.search_bg));
 
     let input = Paragraph::new(format!("/{}", query))
         .block(block)
-        .style(theme.search_input);
+        .style(theme.search_input.bg(theme.search_bg));
 
     frame.render_widget(input, input_area);
 }

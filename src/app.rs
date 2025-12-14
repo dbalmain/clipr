@@ -41,6 +41,8 @@ pub enum AppMode {
     Help,
     /// Numeric prefix mode with command palette (activated by typing digits)
     Numeric,
+    /// Theme picker modal (activated with 'T')
+    ThemePicker,
 }
 
 /// Register filter state
@@ -138,6 +140,11 @@ pub struct App {
     /// Used to calculate half-page and full-page movements
     list_height: u16,
 
+    /// Theme picker state
+    pub theme_picker_themes: Vec<String>,
+    pub theme_picker_selected: usize,
+    pub current_theme_name: String,
+
     /// Flag to request application exit
     pub should_quit: bool,
 }
@@ -208,13 +215,16 @@ impl App {
                 let _ = tx.send(res);
             }).context("Failed to create theme file watcher")?;
 
-            // Get theme file path to watch
+            // Watch the themes directory instead of specific file
+            // This handles editors that do atomic writes (create temp, rename)
             if let Ok(theme_path) = Theme::get_theme_path(&config.general.theme) {
                 use notify::RecursiveMode;
-                if let Err(e) = watcher.watch(&theme_path, RecursiveMode::NonRecursive) {
-                    log::warn!("Failed to watch theme file {:?}: {}", theme_path, e);
-                } else {
-                    log::info!("Watching theme file: {:?}", theme_path);
+                if let Some(parent_dir) = theme_path.parent() {
+                    if let Err(e) = watcher.watch(parent_dir, RecursiveMode::NonRecursive) {
+                        log::warn!("Failed to watch themes directory {:?}: {}", parent_dir, e);
+                    } else {
+                        log::info!("Watching themes directory: {:?}", parent_dir);
+                    }
                 }
             } else {
                 log::warn!("Could not determine theme file path for '{}'", config.general.theme);
@@ -235,6 +245,9 @@ impl App {
             "comfortable" => ViewMode::Comfortable,
             _ => ViewMode::Compact, // Default to compact for invalid values
         };
+
+        // Store current theme name before moving config
+        let current_theme_name = config.general.theme.clone();
 
         Ok(App {
             mode: AppMode::default(),
@@ -258,6 +271,9 @@ impl App {
             view_mode,
             startup_error,
             list_height: 20, // Default, will be updated each frame
+            theme_picker_themes: Vec::new(),
+            theme_picker_selected: 0,
+            current_theme_name,
             should_quit: false,
         })
     }
@@ -544,16 +560,27 @@ impl App {
         self.register_key = None;
     }
 
-    /// Assign current clip to a temporary register (like vim marks)
-    /// Only temporary registers can be assigned from the TUI
-    /// Permanent registers are loaded from config and cannot be modified
+    /// Toggle temporary register assignment for current clip
+    /// If the clip already has the register, remove it; otherwise add it
     pub fn assign_register(&mut self, key: char) -> Result<()> {
         let clip_id = self
             .selected_clip_id()
             .context("No clip selected")?;
 
-        // Add to temporary registry (this updates both the registry and the clip)
-        self.registers.assign_temporary(key, clip_id, &mut self.history)?;
+        // Check if the current clip already has this register
+        let clip_has_register = self
+            .history
+            .get_entry(clip_id)
+            .map(|clip| clip.temporary_registers.contains(&key))
+            .unwrap_or(false);
+
+        if clip_has_register {
+            // Remove the register from this clip
+            self.registers.remove_temporary(key, &mut self.history)?;
+        } else {
+            // Add to temporary registry (this updates both the registry and the clip)
+            self.registers.assign_temporary(key, clip_id, &mut self.history)?;
+        }
 
         // Exit register mode
         self.mode = AppMode::Normal;
@@ -693,6 +720,7 @@ impl App {
             AppMode::Confirm => self.handle_confirm_key(key),
             AppMode::Help => self.handle_help_key(key),
             AppMode::Numeric => self.handle_numeric_key(key),
+            AppMode::ThemePicker => self.handle_theme_picker_key(key),
         }
     }
 
@@ -767,6 +795,18 @@ impl App {
             }
             KeyCode::Char('v') => {
                 self.toggle_view_mode();
+            }
+            KeyCode::Char('t') if key.modifiers.contains(KeyModifiers::ALT) => {
+                // Alt-T - save current theme as default
+                let _ = self.save_theme_as_default();
+            }
+            KeyCode::Char('t') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                // Ctrl-T - cycle to next theme
+                self.cycle_theme();
+            }
+            KeyCode::Char('T') => {
+                // Capital T - open theme picker
+                self.open_theme_picker();
             }
             KeyCode::Char('d') => {
                 // Delete entry - silently ignore errors (e.g., can't delete permanent register clips)
@@ -916,6 +956,98 @@ impl App {
         Ok(())
     }
 
+    /// Handle keys in theme picker mode
+    fn handle_theme_picker_key(&mut self, key: KeyEvent) -> Result<()> {
+        match key.code {
+            KeyCode::Esc => {
+                self.mode = AppMode::Normal;
+            }
+            KeyCode::Enter => {
+                self.select_theme_from_picker();
+            }
+            KeyCode::Up | KeyCode::Char('k') => {
+                if self.theme_picker_selected > 0 {
+                    self.theme_picker_selected -= 1;
+                }
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                if self.theme_picker_selected + 1 < self.theme_picker_themes.len() {
+                    self.theme_picker_selected += 1;
+                }
+            }
+            KeyCode::Home | KeyCode::Char('g') => {
+                self.theme_picker_selected = 0;
+            }
+            KeyCode::End | KeyCode::Char('G') => {
+                self.theme_picker_selected = self.theme_picker_themes.len().saturating_sub(1);
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    /// Cycle to the next available theme
+    pub fn cycle_theme(&mut self) {
+        let themes = Theme::get_all_theme_names();
+        if themes.is_empty() {
+            return;
+        }
+
+        let current_idx = themes.iter().position(|t| t == &self.current_theme_name).unwrap_or(0);
+        let next_idx = (current_idx + 1) % themes.len();
+        let next_theme_name = &themes[next_idx];
+
+        match Theme::load(next_theme_name) {
+            Ok(theme) => {
+                self.theme = theme;
+                self.current_theme_name = next_theme_name.clone();
+            }
+            Err(e) => {
+                self.startup_error = Some(format!("Failed to load theme '{}': {}", next_theme_name, e));
+            }
+        }
+    }
+
+    /// Save current theme as default in config file
+    pub fn save_theme_as_default(&mut self) -> Result<()> {
+        // Update config with current theme
+        self.config.general.theme = self.current_theme_name.clone();
+
+        // Write config to file
+        self.config.save()?;
+
+        Ok(())
+    }
+
+    /// Open theme picker modal
+    pub fn open_theme_picker(&mut self) {
+        self.theme_picker_themes = Theme::get_all_theme_names();
+        // Find current theme index
+        self.theme_picker_selected = self.theme_picker_themes
+            .iter()
+            .position(|t| t == &self.current_theme_name)
+            .unwrap_or(0);
+        self.mode = AppMode::ThemePicker;
+    }
+
+    /// Select theme from picker
+    pub fn select_theme_from_picker(&mut self) {
+        if self.theme_picker_selected < self.theme_picker_themes.len() {
+            let theme_name = &self.theme_picker_themes[self.theme_picker_selected];
+            match Theme::load(theme_name) {
+                Ok(theme) => {
+                    self.theme = theme;
+                    self.current_theme_name = theme_name.clone();
+                    self.mode = AppMode::Normal;
+                }
+                Err(e) => {
+                    self.startup_error = Some(format!("Failed to load theme '{}': {}", theme_name, e));
+                    self.mode = AppMode::Normal;
+                }
+            }
+        }
+    }
+
     /// Render the TUI
     pub fn draw(&mut self, frame: &mut Frame) {
         let size = frame.area();
@@ -990,6 +1122,18 @@ impl App {
         // Render help overlay if in help mode
         if matches!(self.mode, AppMode::Help) {
             ui::render_help_overlay(frame, size, &self.theme);
+        }
+
+        // Render theme picker if in theme picker mode
+        if matches!(self.mode, AppMode::ThemePicker) {
+            ui::render_theme_picker(
+                frame,
+                size,
+                &self.theme_picker_themes,
+                self.theme_picker_selected,
+                &self.current_theme_name,
+                &self.theme,
+            );
         }
 
         // Render confirmation dialog if in confirm mode

@@ -1,6 +1,7 @@
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::*;
-use ratatui::widgets::{List, ListItem, ListState, Paragraph};
+use ratatui::widgets::{Cell, List, ListItem, ListState, Paragraph, Row, Table};
+use unicode_width::UnicodeWidthStr;
 
 use crate::app::{AppMode, RegisterFilter, ViewMode};
 use crate::models::ClipEntry;
@@ -30,20 +31,17 @@ fn format_timestamp(timestamp: i64) -> String {
     }
 }
 
-/// Render list items in compact mode (single line per clip)
-fn render_compact_items(
+/// Render table rows for compact mode (two columns: content and registers)
+fn render_compact_table_rows<'a>(
     entries: &[&ClipEntry],
     selected: usize,
-    available_width: usize,
-    theme: &super::Theme,
-) -> Vec<ListItem<'static>> {
+    content_col_width: usize,
+    theme: &'a super::Theme,
+) -> Vec<Row<'a>> {
     entries
         .iter()
         .enumerate()
         .map(|(i, entry)| {
-            let mut spans = Vec::new();
-
-            // Determine text color and styling based on selection
             let is_selected = i == selected;
             let text_style = if is_selected {
                 Style::default()
@@ -53,67 +51,65 @@ fn render_compact_items(
                 theme.clip_text
             };
 
-            // Add clip number (starting from 0)
-            let number = format!("{:3} ", i);
-            spans.push(Span::styled(number.clone(), text_style));
+            // Column 1: Number
+            let number = format!("{:3}", i);
+            let number_cell = Cell::from(Span::styled(number, text_style));
 
-            // Add pinned indicator
-            if entry.pinned {
-                spans.push(Span::styled(" ", text_style));
-            }
-
-            // Calculate registers string and its length
-            let mut register_strs = Vec::new();
-
-            // Temporary registers with single quotes
-            for &reg in &entry.temporary_registers {
-                register_strs.push((format!("'{}", reg), theme.temp_register));
-            }
-
-            // Permanent registers with double quotes
-            for &reg in &entry.permanent_registers {
-                register_strs.push((format!("\"{}", reg), theme.perm_register));
-            }
-
-            let has_registers = !register_strs.is_empty();
-
-            // Calculate total length: sum of all register strings + spaces between them
-            let registers_len = if has_registers {
-                register_strs.len() * 3 + 2
+            // Column 2: Pin indicator
+            let pin_text = if entry.pinned {
+                &theme.pin_indicator
             } else {
-                0
+                ""
             };
+            let pin_style = theme.pin_indicator_style;
+            let pin_cell = Cell::from(Span::styled(pin_text, pin_style));
 
-            // Calculate available space for preview content
-            let prefix_len = 5 + if entry.pinned { 3 } else { 0 }; // number + optional pin
-            let max_preview_len = available_width
-                .saturating_sub(prefix_len)
-                .saturating_sub(registers_len)
-                .saturating_sub(3);
+            // Column 3: Preview (use full content_col_width since number and pin are separate)
+            let preview = entry.preview(content_col_width);
+            let preview_cell = Cell::from(Span::styled(preview, text_style));
 
-            // Get truncated preview text
-            let preview = entry.preview(max_preview_len);
-            let preview_len = preview.chars().count();
-            spans.push(Span::styled(preview, text_style));
+            // Column 4: Registers
+            let mut register_spans = Vec::new();
 
-            // Add padding and registers on the right
-            if has_registers {
-                let padding_len = available_width
-                    .saturating_sub(prefix_len)
-                    .saturating_sub(preview_len)
-                    .saturating_sub(registers_len);
-
-                spans.push(Span::raw(" ".repeat(padding_len)));
-
-                // Add register spans with their styles (not affected by selection)
-                for (text, style) in register_strs.iter() {
-                    spans.push(Span::raw(" "));
-                    spans.push(Span::styled(text.clone(), *style));
+            // Temporary registers
+            for (idx, &reg) in entry.temporary_registers.iter().enumerate() {
+                if idx > 0 {
+                    register_spans.push(Span::raw(" "));
                 }
+                let style = if is_selected {
+                    theme.temp_register.bg(theme.selection_bg)
+                } else {
+                    theme.temp_register
+                };
+                register_spans.push(Span::styled(format!("'{}", reg), style));
             }
 
-            let line = Line::from(spans);
-            ListItem::new(line)
+            if !entry.temporary_registers.is_empty() && !entry.permanent_registers.is_empty() {
+                register_spans.push(Span::raw("  "));
+            }
+
+            // Permanent registers
+            for (idx, &reg) in entry.permanent_registers.iter().enumerate() {
+                if idx > 0 {
+                    register_spans.push(Span::raw(" "));
+                }
+                let style = if is_selected {
+                    theme.perm_register.bg(theme.selection_bg)
+                } else {
+                    theme.perm_register
+                };
+                register_spans.push(Span::styled(format!("\"{}", reg), style));
+            }
+
+            let register_cell = Cell::from(Line::from(register_spans));
+
+            // Create row with 4 columns
+            let row = Row::new(vec![number_cell, pin_cell, preview_cell, register_cell]);
+            if is_selected {
+                row.style(Style::default().bg(theme.selection_bg))
+            } else {
+                row
+            }
         })
         .collect()
 }
@@ -125,6 +121,12 @@ fn render_comfortable_items(
     available_width: usize,
     theme: &super::Theme,
 ) -> Vec<ListItem<'static>> {
+    // Pre-create pin spans to avoid cloning in the loop
+    let pin_padding = " ".repeat(3usize.saturating_sub(theme.pin_indicator.width()));
+    let pin_str = format!("{}{} ", pin_padding, theme.pin_indicator);
+    let pin_span = Span::styled(pin_str, theme.pin_indicator_style);
+    let no_pin_span = Span::raw("    ");
+
     entries
         .iter()
         .enumerate()
@@ -157,9 +159,9 @@ fn render_comfortable_items(
 
             // Pin directly under the clip number
             if entry.pinned {
-                line2_spans.push(Span::styled("   ", Style::default().fg(metadata_color)));
+                line2_spans.push(pin_span.clone());
             } else {
-                line2_spans.push(Span::raw("    "));
+                line2_spans.push(no_pin_span.clone());
             }
 
             // Add timestamp
@@ -199,7 +201,14 @@ fn render_comfortable_items(
                 Line::from(line2_spans),
                 Line::from(vec![Span::raw("")]),
             ];
-            ListItem::new(lines)
+            let item = ListItem::new(lines);
+
+            // Apply selection background to entire item (all 3 lines) if selected
+            if is_selected {
+                item.style(Style::default().bg(theme.selection_bg))
+            } else {
+                item
+            }
         })
         .collect()
 }
@@ -218,7 +227,6 @@ pub fn render_clip_list(
     view_mode: ViewMode,
     theme: &super::Theme,
 ) {
-
     // Reserve lines for header (search or title or jump mode)
     // In comfortable mode: title, empty, count, empty (4 lines)
     // In compact mode: title + count on same line (1 line)
@@ -245,10 +253,7 @@ pub fn render_clip_list(
     // Determine header text and style based on mode and filter
     let (header_left, header_style) = if !numeric_prefix.is_empty() {
         // Numeric prefix mode: show the prefix being typed with space
-        (
-            format!(": {}", numeric_prefix),
-            theme.temp_register,
-        )
+        (format!(": {}", numeric_prefix), theme.temp_register)
     } else if matches!(mode, AppMode::Search) {
         // Search mode: show "/ <query>" with filter if active
         let base = format!("/ {}", search_query);
@@ -280,7 +285,7 @@ pub fn render_clip_list(
             vec![
                 Line::from(Span::styled(header_left, header_style)),
                 Line::from(""),
-                Line::from(Span::styled(count_text, theme.clip_list_header)),
+                Line::from(Span::styled(count_text, theme.clip_list_item_count)),
                 Line::from(""),
             ]
         }
@@ -298,27 +303,99 @@ pub fn render_clip_list(
             vec![Line::from(vec![
                 Span::styled(header_left, header_style),
                 Span::raw(" ".repeat(padding)),
-                Span::styled(count_text, theme.clip_list_header),
+                Span::styled(count_text, theme.clip_list_item_count),
             ])]
         }
     };
 
-    let header_para = Paragraph::new(header_lines);
+    // Use search_bg when in search mode, otherwise clip_list_bg
+    let header_bg = if matches!(mode, AppMode::Search) {
+        theme.search_bg
+    } else {
+        theme.clip_list_bg
+    };
+    let header_para = Paragraph::new(header_lines).style(Style::default().bg(header_bg));
     frame.render_widget(header_para, header_area);
 
-    // Create list items based on view mode
+    // Render based on view mode
     let available_width = list_area.width as usize;
-    let items: Vec<ListItem> = match view_mode {
-        ViewMode::Compact => render_compact_items(entries, selected, available_width, theme),
-        ViewMode::Comfortable => render_comfortable_items(entries, selected, available_width, theme),
-    };
 
-    // Create list without borders
-    // scroll_padding keeps 3 items visible above/below selection when scrolling
-    let list = List::new(items).highlight_symbol("►").scroll_padding(1);
+    match view_mode {
+        ViewMode::Compact => {
+            // Calculate max register count across all entries (capped at 4)
+            let max_register_count = entries
+                .iter()
+                .map(|e| e.temporary_registers.len() + e.permanent_registers.len())
+                .max()
+                .unwrap_or(0)
+                .min(4);
 
-    let mut list_state = ListState::default();
-    list_state.select(Some(selected));
+            // Calculate register column width: ~3 chars per register + spacing
+            let register_col_width = if max_register_count > 0 {
+                (max_register_count * 3 + 2) as u16
+            } else {
+                0
+            };
 
-    frame.render_stateful_widget(list, list_area, &mut list_state);
+            // Check if any entries are pinned
+            let has_pinned = entries.iter().any(|e| e.pinned);
+            let pin_col_width = if has_pinned {
+                theme.pin_indicator.width() as u16
+            } else {
+                0
+            };
+
+            // Calculate available width for preview column
+            // Account for: number (3) + pin (2 if any) + register col + selection indicator + spacing (6)
+            let highlight_width = theme
+                .selection_indicator_compact
+                .as_ref()
+                .map(|s| s.len())
+                .unwrap_or(0) as u16;
+            let content_col_width = list_area
+                .width
+                .saturating_sub(pin_col_width) // Pin column
+                .saturating_sub(register_col_width) // Register column
+                .saturating_sub(highlight_width) // Selection indicator
+                .saturating_sub(6); // Table spacing
+
+            // Use Table for compact mode with 4 columns
+            let rows =
+                render_compact_table_rows(entries, selected, content_col_width as usize, theme);
+
+            // Table with 4 columns: number, pin, preview (fills space), registers
+            let widths = [
+                Constraint::Length(3),                  // Number
+                Constraint::Length(pin_col_width),      // Pin (0 if none pinned)
+                Constraint::Min(10),                    // Preview (fills remaining)
+                Constraint::Length(register_col_width), // Registers
+            ];
+            let table = Table::new(rows, widths)
+                .style(Style::default().bg(theme.clip_list_bg))
+                .highlight_symbol(theme.selection_indicator_compact.as_deref().unwrap_or(""));
+
+            let mut table_state = ratatui::widgets::TableState::default();
+            table_state.select(Some(selected));
+
+            frame.render_stateful_widget(table, list_area, &mut table_state);
+        }
+        ViewMode::Comfortable => {
+            // Use List for comfortable mode
+            let items = render_comfortable_items(entries, selected, available_width, theme);
+
+            let highlight = theme
+                .selection_indicator_comfortable
+                .as_deref()
+                .unwrap_or("");
+            let list = List::new(items)
+                .highlight_symbol(highlight)
+                .scroll_padding(1)
+                .style(Style::default().bg(theme.clip_list_bg));
+
+            let mut list_state = ListState::default();
+            list_state.select(Some(selected));
+
+            frame.render_stateful_widget(list, list_area, &mut list_state);
+        }
+    }
 }
