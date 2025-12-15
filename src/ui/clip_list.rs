@@ -257,14 +257,14 @@ pub fn render_clip_list(
         // Numeric prefix mode: show the prefix being typed with space
         (format!(": {}", ctx.numeric_prefix), ctx.theme.temp_register)
     } else if matches!(ctx.mode, AppMode::Search) {
-        // Search mode: show "/ <query>" with filter if active
-        let base = format!("/ {}", ctx.search_query);
-        let with_filter = match ctx.register_filter {
-            RegisterFilter::Temporary => format!("{} [temp]", base),
-            RegisterFilter::Permanent => format!("{} [perm]", base),
-            RegisterFilter::None => base,
+        // Search mode: show "/ <query>" with filter prefix if active
+        let (prefix, style) = match ctx.register_filter {
+            RegisterFilter::Temporary => ("[temp]/ ", ctx.theme.temp_register),
+            RegisterFilter::Permanent => ("[perm]/ ", ctx.theme.perm_register),
+            RegisterFilter::None => ("/ ", ctx.theme.search_input),
         };
-        (with_filter, ctx.theme.search_input)
+        let header = format!("{}{}", prefix, ctx.search_query);
+        (header, style)
     } else {
         // Normal mode: show "Clipboard History" or filter status
         let header = match ctx.register_filter {
