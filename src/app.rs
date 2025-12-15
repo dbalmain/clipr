@@ -27,9 +27,10 @@ struct ImageLoadResult {
 }
 
 /// Application mode determines which keybindings are active
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum AppMode {
     /// Normal browsing mode with vim-style navigation
+    #[default]
     Normal,
     /// Search/filter mode (activated with '/')
     Search,
@@ -63,12 +64,6 @@ pub enum ViewMode {
     Compact,
     /// Comfortable: Two lines per clip with metadata
     Comfortable,
-}
-
-impl Default for AppMode {
-    fn default() -> Self {
-        AppMode::Normal
-    }
 }
 
 /// Main application state
@@ -360,15 +355,15 @@ impl App {
             }
 
             // Check if this is an image clip
-            if let Some(entry) = self.history.get_entry(clip_id) {
-                if let crate::models::ClipContent::Image { data, .. } = &entry.content {
-                    log::debug!("Requesting async load for clip {}", clip_id);
-                    // Send load request (non-blocking)
-                    let _ = self.image_load_tx.send(ImageLoadRequest {
-                        clip_id,
-                        image_data: data.clone(),
-                    });
-                }
+            if let Some(entry) = self.history.get_entry(clip_id)
+                && let crate::models::ClipContent::Image { data, .. } = &entry.content
+            {
+                log::debug!("Requesting async load for clip {}", clip_id);
+                // Send load request (non-blocking)
+                let _ = self.image_load_tx.send(ImageLoadRequest {
+                    clip_id,
+                    image_data: data.clone(),
+                });
             }
         }
     }
@@ -1098,13 +1093,15 @@ impl App {
             frame,
             clip_list_area,
             &visible_entries,
-            self.selected_index,
-            self.mode,
-            &self.search_query,
-            &self.numeric_prefix,
-            self.register_filter,
-            self.view_mode,
-            &self.theme,
+            ui::clip_list::ClipListRenderContext {
+                selected: self.selected_index,
+                mode: self.mode,
+                search_query: &self.search_query,
+                numeric_prefix: &self.numeric_prefix,
+                register_filter: self.register_filter,
+                view_mode: self.view_mode,
+                theme: &self.theme,
+            },
         );
 
         // Render divider between history and preview

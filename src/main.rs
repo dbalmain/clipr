@@ -229,7 +229,7 @@ fn cmd_history(limit: usize) -> Result<()> {
         println!("{:3}. [{}]{} {}", i + 1, type_label, pinned_mark, preview);
     }
 
-    if history.len() == 0 {
+    if history.is_empty() {
         println!("(empty - no clipboard history yet)");
     }
 
@@ -330,10 +330,10 @@ fn run_tui<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
         terminal.draw(|f| app.draw(f))?;
 
         // Handle events with timeout for responsive UI (60fps)
-        if event::poll(Duration::from_millis(16))? {
-            if let Event::Key(key) = event::read()? {
-                app.handle_key(key)?;
-            }
+        if event::poll(Duration::from_millis(16))?
+            && let Event::Key(key) = event::read()?
+        {
+            app.handle_key(key)?;
         }
 
         // Exit check

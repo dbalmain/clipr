@@ -1,5 +1,5 @@
-use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use crate::app::ViewMode;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
 /// Create main application layout with clip list, divider, preview, and keyboard hints
 /// Returns [clip_list_area, divider_area, preview_area, keyboard_hints_area]
@@ -9,18 +9,18 @@ pub fn create_main_layout(area: Rect, view_mode: ViewMode) -> Vec<Rect> {
         let margin_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(1),   // Top margin
-                Constraint::Min(3),      // Content
-                Constraint::Length(1),   // Bottom margin
+                Constraint::Length(1), // Top margin
+                Constraint::Min(3),    // Content
+                Constraint::Length(1), // Bottom margin
             ])
             .split(area);
 
         let horizontal_margin = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Length(2),   // Left margin
-                Constraint::Min(10),     // Content
-                Constraint::Length(2),   // Right margin
+                Constraint::Length(2), // Left margin
+                Constraint::Min(10),   // Content
+                Constraint::Length(2), // Right margin
             ])
             .split(margin_chunks[1]);
 
@@ -34,9 +34,9 @@ pub fn create_main_layout(area: Rect, view_mode: ViewMode) -> Vec<Rect> {
     let main_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Min(3),      // Main content area
-            Constraint::Length(1),   // Spacing before hints
-            Constraint::Length(1),   // Keyboard hints bar
+            Constraint::Min(3),    // Main content area
+            Constraint::Length(1), // Spacing before hints
+            Constraint::Length(1), // Keyboard hints bar
         ])
         .split(working_area);
 
@@ -50,13 +50,18 @@ pub fn create_main_layout(area: Rect, view_mode: ViewMode) -> Vec<Rect> {
     let content_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(40),         // Clip list (left)
+            Constraint::Percentage(40),        // Clip list (left)
             Constraint::Length(divider_width), // Divider line
-            Constraint::Min(10),                // Preview (right - remaining space)
+            Constraint::Min(10),               // Preview (right - remaining space)
         ])
         .split(main_chunks[0]);
 
-    vec![content_chunks[0], content_chunks[1], content_chunks[2], main_chunks[2]]
+    vec![
+        content_chunks[0],
+        content_chunks[1],
+        content_chunks[2],
+        main_chunks[2],
+    ]
 }
 
 /// Create centered rectangle for popups/overlays

@@ -10,8 +10,7 @@ pub fn start_text_watcher() -> Result<()> {
     log::info!("Starting text clipboard watcher");
 
     // Get the path to the current executable
-    let clipr_path = std::env::current_exe()
-        .context("Failed to get current executable path")?;
+    let clipr_path = std::env::current_exe().context("Failed to get current executable path")?;
 
     // Open /dev/null for stdout/stderr
     let dev_null = OpenOptions::new()
@@ -45,8 +44,7 @@ pub fn start_image_watcher() -> Result<()> {
     log::info!("Starting image clipboard watcher");
 
     // Get the path to the current executable
-    let clipr_path = std::env::current_exe()
-        .context("Failed to get current executable path")?;
+    let clipr_path = std::env::current_exe().context("Failed to get current executable path")?;
 
     // Open /dev/null for stdout/stderr
     let dev_null = OpenOptions::new()

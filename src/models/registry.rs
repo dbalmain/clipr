@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -42,15 +42,15 @@ impl Registry {
         }
 
         // If key already assigned, remove from old clip
-        if let Some(&old_clip_id) = self.temporary.get(&key) {
-            if let Some(clip) = history.get_entry_mut(old_clip_id) {
-                clip.remove_temporary_register(key);
-                log::debug!(
-                    "Removed temporary register '{}' from clip {}",
-                    key,
-                    old_clip_id
-                );
-            }
+        if let Some(&old_clip_id) = self.temporary.get(&key)
+            && let Some(clip) = history.get_entry_mut(old_clip_id)
+        {
+            clip.remove_temporary_register(key);
+            log::debug!(
+                "Removed temporary register '{}' from clip {}",
+                key,
+                old_clip_id
+            );
         }
 
         // Assign to new clip
@@ -91,10 +91,10 @@ impl Registry {
         }
 
         // Remove from old clip if exists
-        if let Some(&old_clip_id) = self.permanent.get(&key) {
-            if let Some(clip) = history.get_entry_mut(old_clip_id) {
-                clip.remove_permanent_register(key);
-            }
+        if let Some(&old_clip_id) = self.permanent.get(&key)
+            && let Some(clip) = history.get_entry_mut(old_clip_id)
+        {
+            clip.remove_permanent_register(key);
         }
 
         // Assign to new clip
@@ -177,10 +177,21 @@ impl Registry {
         for (&key, register_value) in &config.permanent_registers {
             // Create ClipContent based on register type
             let (content, name, description) = match register_value {
-                PermanentRegisterValue::Inline { content, name, description } => {
-                    (ClipContent::Text(content.clone()), name.clone(), description.clone())
-                }
-                PermanentRegisterValue::File { file, mime_type, name, description } => {
+                PermanentRegisterValue::Inline {
+                    content,
+                    name,
+                    description,
+                } => (
+                    ClipContent::Text(content.clone()),
+                    name.clone(),
+                    description.clone(),
+                ),
+                PermanentRegisterValue::File {
+                    file,
+                    mime_type,
+                    name,
+                    description,
+                } => {
                     let mime = mime_type.as_deref().unwrap_or("application/octet-stream");
                     (
                         ClipContent::File {
@@ -270,25 +281,31 @@ mod tests {
 
         registry.assign_temporary('a', id1, &mut history).unwrap();
         assert_eq!(registry.get_temporary('a'), Some(id1));
-        assert!(history
-            .get_entry(id1)
-            .unwrap()
-            .temporary_registers
-            .contains(&'a'));
+        assert!(
+            history
+                .get_entry(id1)
+                .unwrap()
+                .temporary_registers
+                .contains(&'a')
+        );
 
         // Reassign should remove from old clip
         registry.assign_temporary('a', id2, &mut history).unwrap();
         assert_eq!(registry.get_temporary('a'), Some(id2));
-        assert!(!history
-            .get_entry(id1)
-            .unwrap()
-            .temporary_registers
-            .contains(&'a'));
-        assert!(history
-            .get_entry(id2)
-            .unwrap()
-            .temporary_registers
-            .contains(&'a'));
+        assert!(
+            !history
+                .get_entry(id1)
+                .unwrap()
+                .temporary_registers
+                .contains(&'a')
+        );
+        assert!(
+            history
+                .get_entry(id2)
+                .unwrap()
+                .temporary_registers
+                .contains(&'a')
+        );
     }
 
     #[test]
@@ -322,11 +339,13 @@ mod tests {
 
         assert_eq!(registry.temporary_count(), 0);
         assert_eq!(registry.get_temporary('a'), None);
-        assert!(!history
-            .get_entry(id1)
-            .unwrap()
-            .temporary_registers
-            .contains(&'a'));
+        assert!(
+            !history
+                .get_entry(id1)
+                .unwrap()
+                .temporary_registers
+                .contains(&'a')
+        );
     }
 
     #[test]

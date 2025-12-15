@@ -161,7 +161,9 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(245, 194, 231)),
             timestamp: Style::default().fg(Color::Rgb(166, 173, 200)),
             clip_list_header: Style::default().fg(Color::Rgb(166, 173, 200)),
-            clip_list_item_count: Style::default().fg(Color::Rgb(166, 173, 200)).add_modifier(Modifier::DIM),
+            clip_list_item_count: Style::default()
+                .fg(Color::Rgb(166, 173, 200))
+                .add_modifier(Modifier::DIM),
 
             // Preview
             preview_text: Style::default().fg(fg),
@@ -252,7 +254,9 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(234, 118, 203)),
             timestamp: Style::default().fg(Color::Rgb(108, 111, 133)),
             clip_list_header: Style::default().fg(Color::Rgb(108, 111, 133)),
-            clip_list_item_count: Style::default().fg(Color::Rgb(108, 111, 133)).add_modifier(Modifier::DIM),
+            clip_list_item_count: Style::default()
+                .fg(Color::Rgb(108, 111, 133))
+                .add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
             preview_loading: Style::default().fg(Color::Rgb(108, 111, 133)),
@@ -336,7 +340,9 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(187, 154, 247)),
             timestamp: Style::default().fg(Color::Rgb(169, 177, 214)),
             clip_list_header: Style::default().fg(Color::Rgb(169, 177, 214)),
-            clip_list_item_count: Style::default().fg(Color::Rgb(169, 177, 214)).add_modifier(Modifier::DIM),
+            clip_list_item_count: Style::default()
+                .fg(Color::Rgb(169, 177, 214))
+                .add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
             preview_loading: Style::default().fg(Color::Rgb(169, 177, 214)),
@@ -420,7 +426,9 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(187, 154, 247)),
             timestamp: Style::default().fg(Color::Rgb(169, 177, 214)),
             clip_list_header: Style::default().fg(Color::Rgb(169, 177, 214)),
-            clip_list_item_count: Style::default().fg(Color::Rgb(169, 177, 214)).add_modifier(Modifier::DIM),
+            clip_list_item_count: Style::default()
+                .fg(Color::Rgb(169, 177, 214))
+                .add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
             preview_loading: Style::default().fg(Color::Rgb(169, 177, 214)),
@@ -504,7 +512,9 @@ impl Theme {
             perm_register: Style::default().fg(Color::Rgb(136, 57, 239)),
             timestamp: Style::default().fg(Color::Rgb(78, 89, 131)),
             clip_list_header: Style::default().fg(Color::Rgb(78, 89, 131)),
-            clip_list_item_count: Style::default().fg(Color::Rgb(78, 89, 131)).add_modifier(Modifier::DIM),
+            clip_list_item_count: Style::default()
+                .fg(Color::Rgb(78, 89, 131))
+                .add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
             preview_loading: Style::default().fg(Color::Rgb(78, 89, 131)),
@@ -896,17 +906,15 @@ impl Theme {
             let themes_dir = config_dir.join("themes");
             if let Ok(entries) = fs::read_dir(&themes_dir) {
                 for entry in entries.flatten() {
-                    if let Ok(file_type) = entry.file_type() {
-                        if file_type.is_file() {
-                            if let Some(name) = entry.file_name().to_str() {
-                                if name.ends_with(".toml") {
-                                    let theme_name = name.trim_end_matches(".toml");
-                                    // Only add if not already in built-in list
-                                    if !themes.contains(&theme_name.to_string()) {
-                                        themes.push(theme_name.to_string());
-                                    }
-                                }
-                            }
+                    if let Ok(file_type) = entry.file_type()
+                        && file_type.is_file()
+                        && let Some(name) = entry.file_name().to_str()
+                        && name.ends_with(".toml")
+                    {
+                        let theme_name = name.trim_end_matches(".toml");
+                        // Only add if not already in built-in list
+                        if !themes.contains(&theme_name.to_string()) {
+                            themes.push(theme_name.to_string());
                         }
                     }
                 }
@@ -1256,10 +1264,10 @@ pub fn list_custom_themes() -> Result<Vec<String>> {
     for entry in fs::read_dir(&themes_dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.extension().and_then(|s| s.to_str()) == Some("toml") {
-            if let Some(name) = path.file_stem().and_then(|s| s.to_str()) {
-                themes.push(name.to_string());
-            }
+        if path.extension().and_then(|s| s.to_str()) == Some("toml")
+            && let Some(name) = path.file_stem().and_then(|s| s.to_str())
+        {
+            themes.push(name.to_string());
         }
     }
 

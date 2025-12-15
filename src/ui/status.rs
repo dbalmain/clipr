@@ -6,7 +6,6 @@ use crate::app::AppMode;
 
 /// Render keyboard hints bar showing mode-specific shortcuts
 pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode, theme: &Theme) {
-
     let hints = match mode {
         AppMode::Normal => {
             vec![
@@ -85,7 +84,8 @@ pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode, theme
         }
     };
 
-    let paragraph = Paragraph::new(Line::from(hints)).style(theme.status_desc.bg(theme.status_bar_bg));
+    let paragraph =
+        Paragraph::new(Line::from(hints)).style(theme.status_desc.bg(theme.status_bar_bg));
 
     frame.render_widget(paragraph, area);
 }

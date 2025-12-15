@@ -1,8 +1,8 @@
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, ListState};
 
-use super::layout::centered_rect;
 use super::Theme;
+use super::layout::centered_rect;
 
 /// Render theme picker modal
 pub fn render_theme_picker(

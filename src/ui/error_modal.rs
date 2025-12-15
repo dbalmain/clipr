@@ -1,8 +1,8 @@
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Clear, Paragraph, Wrap};
 
-use super::layout::centered_rect;
 use super::Theme;
+use super::layout::centered_rect;
 
 /// Render error modal with dismissal instructions
 pub fn render_error_modal(frame: &mut Frame, area: Rect, error_msg: &str, theme: &Theme) {

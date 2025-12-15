@@ -2,7 +2,7 @@ pub mod backend;
 pub mod watch;
 pub mod wayland;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use std::env;
 
 pub use backend::ClipboardBackend;

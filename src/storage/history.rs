@@ -49,7 +49,8 @@ impl HistoryStorage for BincodeHistoryStorage {
         let bytes = fs::read(&self.path)
             .with_context(|| format!("Failed to read history from {:?}", self.path))?;
 
-        match bincode::decode_from_slice::<ClipboardHistory, _>(&bytes, bincode::config::standard()) {
+        match bincode::decode_from_slice::<ClipboardHistory, _>(&bytes, bincode::config::standard())
+        {
             Ok((mut history, _bytes_read)) => {
                 // Rebuild hash_to_id index after deserialization
                 history.rebuild_hash_map();

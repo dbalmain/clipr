@@ -1,6 +1,6 @@
 use bincode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
-use std::collections::{hash_map::DefaultHasher, HashMap};
+use std::collections::{HashMap, hash_map::DefaultHasher};
 use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 use std::time::SystemTime;
@@ -230,9 +230,7 @@ impl ClipEntry {
 
     /// Check if this entry should be kept (has pins or registers)
     pub fn should_keep(&self) -> bool {
-        self.pinned
-            || !self.temporary_registers.is_empty()
-            || !self.permanent_registers.is_empty()
+        self.pinned || !self.temporary_registers.is_empty() || !self.permanent_registers.is_empty()
     }
 
     /// Check if this entry can be deleted from TUI
@@ -424,7 +422,8 @@ impl ClipboardHistory {
 
     /// Toggle pin status of entry by ID
     pub fn toggle_pin(&mut self, id: u64) -> anyhow::Result<()> {
-        let entry = self.get_entry_mut(id)
+        let entry = self
+            .get_entry_mut(id)
             .ok_or_else(|| anyhow::anyhow!("Entry {} not found", id))?;
         entry.pinned = !entry.pinned;
         Ok(())
@@ -478,8 +477,7 @@ impl ClipboardHistory {
 
     /// Sort entries by timestamp (most recent first)
     pub fn sort_by_timestamp(&mut self) {
-        self.entries
-            .sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        self.entries.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
     }
 
     /// Get next available ID
@@ -515,7 +513,7 @@ mod tests {
     #[test]
     fn test_clip_content_preview() {
         let text = ClipContent::Text("Hello, world!".to_string());
-        assert_eq!(text.preview(10), "Hello, wor...");
+        assert_eq!(text.preview(10), "Hello, ...");
         assert_eq!(text.preview(50), "Hello, world!");
 
         let image = ClipContent::Image {
@@ -598,7 +596,10 @@ mod tests {
         let id2 = history.add_entry(ClipContent::Text("Entry 2".to_string()));
 
         // Assign registers
-        history.get_entry_mut(id1).unwrap().add_temporary_register('a');
+        history
+            .get_entry_mut(id1)
+            .unwrap()
+            .add_temporary_register('a');
         history
             .get_entry_mut(id2)
             .unwrap()

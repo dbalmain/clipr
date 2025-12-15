@@ -1,11 +1,11 @@
-use ratatui::prelude::*;
 use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::prelude::*;
 use ratatui::widgets::{Paragraph, Wrap};
-use ratatui_image::protocol::StatefulProtocol;
 use ratatui_image::StatefulImage;
+use ratatui_image::protocol::StatefulProtocol;
 
-use crate::models::{ClipContent, ClipEntry};
 use super::Theme;
+use crate::models::{ClipContent, ClipEntry};
 
 /// Render preview panel with content at top and metadata at bottom
 pub fn render_preview(
@@ -16,7 +16,6 @@ pub fn render_preview(
     show_metadata: bool,
     theme: &Theme,
 ) {
-
     if let Some(entry) = entry {
         // Calculate metadata height if metadata is enabled
         let (content_area, metadata_area) = if show_metadata {
@@ -67,12 +66,10 @@ pub fn render_preview(
                     image_rendered = true;
                 } else {
                     // No cached image yet - show loading message
-                    content_lines.push(Line::from(
-                        Span::styled(
-                            "[Loading image...]",
-                            theme.preview_metadata_label
-                        )
-                    ));
+                    content_lines.push(Line::from(Span::styled(
+                        "[Loading image...]",
+                        theme.preview_metadata_label,
+                    )));
                 }
             }
             ClipContent::File { path, .. } => {
@@ -95,94 +92,92 @@ pub fn render_preview(
         if let Some(metadata_area) = metadata_area {
             let mut metadata_lines = Vec::new();
 
-        // Line 1: Name (bold) + size (right-aligned)
-        let name = entry.name.as_deref().unwrap_or("[unnamed]");
-        let size_info = match &entry.content {
-            ClipContent::Text(text) => format!("{} bytes", text.len()),
-            ClipContent::Image { data, .. } => format!("{} bytes", data.len()),
-            ClipContent::File { .. } => "file".to_string(),
-        };
+            // Line 1: Name (bold) + size (right-aligned)
+            let name = entry.name.as_deref().unwrap_or("[unnamed]");
+            let size_info = match &entry.content {
+                ClipContent::Text(text) => format!("{} bytes", text.len()),
+                ClipContent::Image { data, .. } => format!("{} bytes", data.len()),
+                ClipContent::File { .. } => "file".to_string(),
+            };
 
-        let available_width = area.width as usize;
-        let name_width = name.len();
-        let size_width = size_info.len();
-        let padding = if name_width + size_width + 1 <= available_width {
-            available_width - name_width - size_width
-        } else {
-            1
-        };
+            let available_width = area.width as usize;
+            let name_width = name.len();
+            let size_width = size_info.len();
+            let padding = if name_width + size_width < available_width {
+                available_width - name_width - size_width
+            } else {
+                1
+            };
 
-        metadata_lines.push(Line::from(vec![
-            Span::styled(name, theme.preview_metadata_value.add_modifier(Modifier::BOLD)),
-            Span::raw(" ".repeat(padding)),
-            Span::styled(size_info, theme.preview_metadata_label),
-        ]));
+            metadata_lines.push(Line::from(vec![
+                Span::styled(
+                    name,
+                    theme.preview_metadata_value.add_modifier(Modifier::BOLD),
+                ),
+                Span::raw(" ".repeat(padding)),
+                Span::styled(size_info, theme.preview_metadata_label),
+            ]));
 
-        // Line 2: Mime-type
-        let mime_type = match &entry.content {
-            ClipContent::Text(_) => "text/plain",
-            ClipContent::Image { mime_type, .. } => mime_type,
-            ClipContent::File { mime_type, .. } => mime_type,
-        };
-        metadata_lines.push(Line::from(
-            Span::styled(mime_type, theme.preview_metadata_label)
-        ));
+            // Line 2: Mime-type
+            let mime_type = match &entry.content {
+                ClipContent::Text(_) => "text/plain",
+                ClipContent::Image { mime_type, .. } => mime_type,
+                ClipContent::File { mime_type, .. } => mime_type,
+            };
+            metadata_lines.push(Line::from(Span::styled(
+                mime_type,
+                theme.preview_metadata_label,
+            )));
 
-        // Line 3: Description (always present, may be empty or multiline)
-        if let Some(desc) = &entry.description {
-            // Handle multiline descriptions
-            for line in desc.lines() {
-                metadata_lines.push(Line::from(
-                    Span::styled(line, theme.preview_metadata_label)
-                ));
-            }
-        } else {
-            // Empty line to maintain 4-row height
-            metadata_lines.push(Line::from(""));
-        }
-
-        // Line 4: Registers (always present, may be empty)
-        if !entry.temporary_registers.is_empty() || !entry.permanent_registers.is_empty() {
-            let mut register_spans = Vec::new();
-
-            // Temporary registers with single quotes
-            for (i, &reg) in entry.temporary_registers.iter().enumerate() {
-                if i > 0 {
-                    register_spans.push(Span::raw(" "));
+            // Line 3: Description (always present, may be empty or multiline)
+            if let Some(desc) = &entry.description {
+                // Handle multiline descriptions
+                for line in desc.lines() {
+                    metadata_lines
+                        .push(Line::from(Span::styled(line, theme.preview_metadata_label)));
                 }
-                register_spans.push(Span::styled(
-                    format!("'{}", reg),
-                    theme.temp_register
-                ));
+            } else {
+                // Empty line to maintain 4-row height
+                metadata_lines.push(Line::from(""));
             }
 
-            if !entry.temporary_registers.is_empty() && !entry.permanent_registers.is_empty() {
-                register_spans.push(Span::raw("  "));
-            }
+            // Line 4: Registers (always present, may be empty)
+            if !entry.temporary_registers.is_empty() || !entry.permanent_registers.is_empty() {
+                let mut register_spans = Vec::new();
 
-            // Permanent registers with double quotes
-            for (i, &reg) in entry.permanent_registers.iter().enumerate() {
-                if i > 0 {
-                    register_spans.push(Span::raw(" "));
+                // Temporary registers with single quotes
+                for (i, &reg) in entry.temporary_registers.iter().enumerate() {
+                    if i > 0 {
+                        register_spans.push(Span::raw(" "));
+                    }
+                    register_spans.push(Span::styled(format!("'{}", reg), theme.temp_register));
                 }
-                register_spans.push(Span::styled(
-                    format!("\"{}", reg),
-                    theme.perm_register
-                ));
+
+                if !entry.temporary_registers.is_empty() && !entry.permanent_registers.is_empty() {
+                    register_spans.push(Span::raw("  "));
+                }
+
+                // Permanent registers with double quotes
+                for (i, &reg) in entry.permanent_registers.iter().enumerate() {
+                    if i > 0 {
+                        register_spans.push(Span::raw(" "));
+                    }
+                    register_spans.push(Span::styled(format!("\"{}", reg), theme.perm_register));
+                }
+
+                metadata_lines.push(Line::from(register_spans));
+            } else {
+                // Empty line to maintain 4-row height
+                metadata_lines.push(Line::from(""));
             }
 
-            metadata_lines.push(Line::from(register_spans));
-        } else {
-            // Empty line to maintain 4-row height
-            metadata_lines.push(Line::from(""));
-        }
-
-            let metadata_para = Paragraph::new(metadata_lines).style(Style::default().bg(theme.preview_bg));
+            let metadata_para =
+                Paragraph::new(metadata_lines).style(Style::default().bg(theme.preview_bg));
             frame.render_widget(metadata_para, metadata_area);
         }
     } else {
-        let msg = Paragraph::new("No selection")
-            .style(theme.preview_metadata_label.bg(theme.preview_bg));
+        let msg =
+            Paragraph::new("No selection").style(theme.preview_metadata_label.bg(theme.preview_bg));
         frame.render_widget(msg, area);
     }
 }

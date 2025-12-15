@@ -5,7 +5,6 @@ use super::Theme;
 
 /// Render search input bar at bottom of screen when in search mode
 pub fn render_search_input(frame: &mut Frame, area: Rect, query: &str, theme: &Theme) {
-
     // Position at bottom, 3 lines tall
     let input_area = Rect {
         x: area.x,

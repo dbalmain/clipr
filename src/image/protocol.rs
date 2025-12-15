@@ -12,11 +12,10 @@ impl ImageProtocol {
     /// Auto-detects terminal capabilities (Kitty, Sixel, iTerm2, or Halfblocks fallback)
     pub fn new() -> Self {
         // Try to auto-detect terminal capabilities
-        let picker = Picker::from_query_stdio()
-            .unwrap_or_else(|_| {
-                // Fallback to default font size if detection fails
-                Picker::from_fontsize((8, 12))
-            });
+        let picker = Picker::from_query_stdio().unwrap_or_else(|_| {
+            // Fallback to default font size if detection fails
+            Picker::from_fontsize((8, 12))
+        });
 
         ImageProtocol { picker }
     }

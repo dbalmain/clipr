@@ -4,19 +4,14 @@ use nucleo_matcher::{Config, Matcher, Utf32String};
 use super::clip::ClipEntry;
 
 /// Search case sensitivity mode
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum SearchMode {
     /// Smart case: case-insensitive unless query contains uppercase letters
     /// This is the default mode
+    #[default]
     SmartCase,
     /// Case-sensitive search (always)
     CaseSensitive,
-}
-
-impl Default for SearchMode {
-    fn default() -> Self {
-        SearchMode::SmartCase
-    }
 }
 
 /// Wrapper around nucleo for fuzzy searching clipboard entries
@@ -143,14 +138,13 @@ impl ClipEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::clip::ClipContent;
 
     #[test]
     fn test_search_empty_query() {
         let mut index = SearchIndex::new();
         let clips = vec![
-            ClipEntry::new_text("hello world".to_string()),
-            ClipEntry::new_text("goodbye world".to_string()),
+            ClipEntry::new_text(1, "hello world".to_string()),
+            ClipEntry::new_text(2, "goodbye world".to_string()),
         ];
 
         let results = index.search(&clips, "");
@@ -161,9 +155,9 @@ mod tests {
     fn test_search_basic() {
         let mut index = SearchIndex::new();
         let clips = vec![
-            ClipEntry::new_text("hello world".to_string()),
-            ClipEntry::new_text("goodbye world".to_string()),
-            ClipEntry::new_text("unrelated".to_string()),
+            ClipEntry::new_text(1, "hello world".to_string()),
+            ClipEntry::new_text(2, "goodbye world".to_string()),
+            ClipEntry::new_text(3, "unrelated".to_string()),
         ];
 
         let results = index.search(&clips, "hello");
@@ -174,7 +168,7 @@ mod tests {
     #[test]
     fn test_search_smart_case() {
         let mut index = SearchIndex::new();
-        let clips = vec![ClipEntry::new_text("Hello World".to_string())];
+        let clips = vec![ClipEntry::new_text(1, "Hello World".to_string())];
 
         // Lowercase query should match (case-insensitive)
         let results = index.search(&clips, "hello");
@@ -201,7 +195,7 @@ mod tests {
     #[test]
     fn test_search_with_name() {
         let mut index = SearchIndex::new();
-        let mut clip = ClipEntry::new_text("content".to_string());
+        let mut clip = ClipEntry::new_text(1, "content".to_string());
         clip.name = Some("my_clip".to_string());
 
         let clips = vec![clip];

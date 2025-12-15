@@ -11,7 +11,7 @@ use chrono::{DateTime, Local};
 fn format_timestamp(timestamp: i64) -> String {
     let dt = DateTime::from_timestamp(timestamp, 0)
         .map(|utc| utc.with_timezone(&Local))
-        .unwrap_or_else(|| Local::now());
+        .unwrap_or_else(Local::now);
 
     let now = Local::now();
     let duration = now.signed_duration_since(dt);
@@ -210,24 +210,29 @@ fn render_comfortable_items(
         .collect()
 }
 
+/// Context for rendering the clip list
+pub struct ClipListRenderContext<'a> {
+    pub selected: usize,
+    pub mode: AppMode,
+    pub search_query: &'a str,
+    pub numeric_prefix: &'a str,
+    pub register_filter: RegisterFilter,
+    pub view_mode: ViewMode,
+    pub theme: &'a super::Theme,
+}
+
 /// Render the clip list widget showing clipboard history entries
 /// Always shows header at top (search or title or numeric prefix) with item count
 pub fn render_clip_list(
     frame: &mut Frame,
     area: Rect,
     entries: &[&ClipEntry],
-    selected: usize,
-    mode: AppMode,
-    search_query: &str,
-    numeric_prefix: &str,
-    register_filter: RegisterFilter,
-    view_mode: ViewMode,
-    theme: &super::Theme,
+    ctx: ClipListRenderContext,
 ) {
     // Reserve lines for header (search or title or jump mode)
     // In comfortable mode: title, empty, count, empty (4 lines)
     // In compact mode: title + count on same line (1 line)
-    let header_height = match view_mode {
+    let header_height = match ctx.view_mode {
         ViewMode::Comfortable => 4, // Title, empty, count, empty
         ViewMode::Compact => 1,     // Title + count (same line)
     };
@@ -248,41 +253,41 @@ pub fn render_clip_list(
     let count_text = format!("{} items", item_count);
 
     // Determine header text and style based on mode and filter
-    let (header_left, header_style) = if !numeric_prefix.is_empty() {
+    let (header_left, header_style) = if !ctx.numeric_prefix.is_empty() {
         // Numeric prefix mode: show the prefix being typed with space
-        (format!(": {}", numeric_prefix), theme.temp_register)
-    } else if matches!(mode, AppMode::Search) {
+        (format!(": {}", ctx.numeric_prefix), ctx.theme.temp_register)
+    } else if matches!(ctx.mode, AppMode::Search) {
         // Search mode: show "/ <query>" with filter if active
-        let base = format!("/ {}", search_query);
-        let with_filter = match register_filter {
+        let base = format!("/ {}", ctx.search_query);
+        let with_filter = match ctx.register_filter {
             RegisterFilter::Temporary => format!("{} [temp]", base),
             RegisterFilter::Permanent => format!("{} [perm]", base),
             RegisterFilter::None => base,
         };
-        (with_filter, theme.search_input)
+        (with_filter, ctx.theme.search_input)
     } else {
         // Normal mode: show "Clipboard History" or filter status
-        let header = match register_filter {
+        let header = match ctx.register_filter {
             RegisterFilter::Temporary => "Temporary Registers".to_string(),
             RegisterFilter::Permanent => "Permanent Registers".to_string(),
             RegisterFilter::None => "Clipboard History".to_string(),
         };
-        let style = match register_filter {
-            RegisterFilter::Temporary => theme.temp_register,
-            RegisterFilter::Permanent => theme.perm_register,
-            RegisterFilter::None => theme.clip_list_header,
+        let style = match ctx.register_filter {
+            RegisterFilter::Temporary => ctx.theme.temp_register,
+            RegisterFilter::Permanent => ctx.theme.perm_register,
+            RegisterFilter::None => ctx.theme.clip_list_header,
         };
         (header, style)
     };
 
     // Build header lines based on view mode
-    let header_lines = match view_mode {
+    let header_lines = match ctx.view_mode {
         ViewMode::Comfortable => {
             // Comfortable: title, empty, count, empty (each on separate lines)
             vec![
                 Line::from(Span::styled(header_left, header_style)),
                 Line::from(""),
-                Line::from(Span::styled(count_text, theme.clip_list_item_count)),
+                Line::from(Span::styled(count_text, ctx.theme.clip_list_item_count)),
                 Line::from(""),
             ]
         }
@@ -291,7 +296,7 @@ pub fn render_clip_list(
             let available_width = header_area.width as usize;
             let left_width = header_left.len();
             let right_width = count_text.len();
-            let padding = if left_width + right_width + 1 <= available_width {
+            let padding = if left_width + right_width < available_width {
                 available_width - left_width - right_width
             } else {
                 1
@@ -300,16 +305,16 @@ pub fn render_clip_list(
             vec![Line::from(vec![
                 Span::styled(header_left, header_style),
                 Span::raw(" ".repeat(padding)),
-                Span::styled(count_text, theme.clip_list_item_count),
+                Span::styled(count_text, ctx.theme.clip_list_item_count),
             ])]
         }
     };
 
     // Use search_bg when in search mode, otherwise clip_list_bg
-    let header_bg = if matches!(mode, AppMode::Search) {
-        theme.search_bg
+    let header_bg = if matches!(ctx.mode, AppMode::Search) {
+        ctx.theme.search_bg
     } else {
-        theme.clip_list_bg
+        ctx.theme.clip_list_bg
     };
     let header_para = Paragraph::new(header_lines).style(Style::default().bg(header_bg));
     frame.render_widget(header_para, header_area);
@@ -317,7 +322,7 @@ pub fn render_clip_list(
     // Render based on view mode
     let available_width = list_area.width as usize;
 
-    match view_mode {
+    match ctx.view_mode {
         ViewMode::Compact => {
             // Calculate max register count across all entries (capped at 4)
             let max_register_count = entries
@@ -337,14 +342,15 @@ pub fn render_clip_list(
             // Check if any entries are pinned
             let has_pinned = entries.iter().any(|e| e.pinned);
             let pin_col_width = if has_pinned {
-                theme.pin_indicator.width() as u16
+                ctx.theme.pin_indicator.width() as u16
             } else {
                 0
             };
 
             // Calculate available width for preview column
             // Account for: number (3) + pin (2 if any) + register col + selection indicator + spacing (6)
-            let highlight_width = theme
+            let highlight_width = ctx
+                .theme
                 .selection_indicator_compact
                 .as_ref()
                 .map(|s| s.len())
@@ -357,8 +363,12 @@ pub fn render_clip_list(
                 .saturating_sub(6); // Table spacing
 
             // Use Table for compact mode with 4 columns
-            let rows =
-                render_compact_table_rows(entries, selected, content_col_width as usize, theme);
+            let rows = render_compact_table_rows(
+                entries,
+                ctx.selected,
+                content_col_width as usize,
+                ctx.theme,
+            );
 
             // Table with 4 columns: number, pin, preview (fills space), registers
             let widths = [
@@ -368,29 +378,35 @@ pub fn render_clip_list(
                 Constraint::Length(register_col_width), // Registers
             ];
             let table = Table::new(rows, widths)
-                .style(Style::default().bg(theme.clip_list_bg))
-                .highlight_symbol(theme.selection_indicator_compact.as_deref().unwrap_or(""));
+                .style(Style::default().bg(ctx.theme.clip_list_bg))
+                .highlight_symbol(
+                    ctx.theme
+                        .selection_indicator_compact
+                        .as_deref()
+                        .unwrap_or(""),
+                );
 
             let mut table_state = ratatui::widgets::TableState::default();
-            table_state.select(Some(selected));
+            table_state.select(Some(ctx.selected));
 
             frame.render_stateful_widget(table, list_area, &mut table_state);
         }
         ViewMode::Comfortable => {
             // Use List for comfortable mode
-            let items = render_comfortable_items(entries, selected, available_width, theme);
+            let items = render_comfortable_items(entries, ctx.selected, available_width, ctx.theme);
 
-            let highlight = theme
+            let highlight = ctx
+                .theme
                 .selection_indicator_comfortable
                 .as_deref()
                 .unwrap_or("");
             let list = List::new(items)
                 .highlight_symbol(highlight)
                 .scroll_padding(1)
-                .style(Style::default().bg(theme.clip_list_bg));
+                .style(Style::default().bg(ctx.theme.clip_list_bg));
 
             let mut list_state = ListState::default();
-            list_state.select(Some(selected));
+            list_state.select(Some(ctx.selected));
 
             frame.render_stateful_widget(list, list_area, &mut list_state);
         }

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 /// Main configuration structure
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
     #[serde(default)]
     pub general: GeneralConfig,
@@ -13,19 +13,11 @@ pub struct Config {
 }
 
 impl Config {
-    /// Create default configuration
-    pub fn default() -> Self {
-        Config {
-            general: GeneralConfig::default(),
-            permanent_registers: HashMap::new(),
-        }
-    }
-
     /// Save configuration to file
     pub fn save(&self) -> Result<()> {
         use anyhow::Context;
-        use std::fs;
         use std::env;
+        use std::fs;
 
         // Get config directory path
         let home = env::var("HOME").context("HOME environment variable not set")?;
@@ -38,11 +30,13 @@ impl Config {
 
         let config_path = config_dir.join("clipr.toml");
 
-        let toml_string = toml::to_string_pretty(self)
-            .context("Failed to serialize config to TOML")?;
+        let toml_string =
+            toml::to_string_pretty(self).context("Failed to serialize config to TOML")?;
 
-        fs::write(&config_path, toml_string)
-            .context(format!("Failed to write config file: {}", config_path.display()))?;
+        fs::write(&config_path, toml_string).context(format!(
+            "Failed to write config file: {}",
+            config_path.display()
+        ))?;
 
         Ok(())
     }
@@ -272,8 +266,8 @@ impl ConfigStorage for TomlConfigStorage {
         use std::fs;
 
         // Serialize to TOML
-        let toml_str = toml::to_string_pretty(config)
-            .with_context(|| "Failed to serialize configuration")?;
+        let toml_str =
+            toml::to_string_pretty(config).with_context(|| "Failed to serialize configuration")?;
 
         // Ensure parent directory exists
         if let Some(parent) = self.path.parent() {
