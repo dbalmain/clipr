@@ -257,14 +257,21 @@ pub fn render_clip_list(
         // Numeric prefix mode: show the prefix being typed with space
         (format!(": {}", ctx.numeric_prefix), ctx.theme.temp_register)
     } else if matches!(ctx.mode, AppMode::Search) || !ctx.search_query.is_empty() {
-        // Search mode: show "/ <query>" with filter prefix if active
+        // Search mode or active search query: show "/ <query>" with filter prefix if active
         let (prefix, style) = match ctx.register_filter {
             RegisterFilter::Temporary => ("[temp]/ ", ctx.theme.temp_register),
             RegisterFilter::Permanent => ("[perm]/ ", ctx.theme.perm_register),
             RegisterFilter::None => ("/ ", ctx.theme.search_input),
         };
-        let header = format!("{}{}", prefix, ctx.search_query);
-        (header, style)
+
+        // Add cursor if in search mode
+        let header_with_cursor = if matches!(ctx.mode, AppMode::Search) {
+            format!("{}{}_", prefix, ctx.search_query)
+        } else {
+            format!("{}{}", prefix, ctx.search_query)
+        };
+
+        (header_with_cursor, style)
     } else {
         // Normal mode with no search: show "Clipboard History" or filter status
         let header = match ctx.register_filter {
@@ -310,9 +317,9 @@ pub fn render_clip_list(
         }
     };
 
-    // Use search_bg when in search mode, otherwise clip_list_bg
+    // Use search_focused_bg when in search mode, otherwise clip_list_bg
     let header_bg = if matches!(ctx.mode, AppMode::Search) {
-        ctx.theme.search_bg
+        ctx.theme.search_focused_bg
     } else {
         ctx.theme.clip_list_bg
     };

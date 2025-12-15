@@ -54,6 +54,7 @@ pub struct Theme {
     pub selection_bg: Color,
     pub status_bar_bg: Color,
     pub search_bg: Color,
+    pub search_focused_bg: Color,
 
     // === Indicators ===
     pub selection_indicator_compact: Option<String>,
@@ -138,9 +139,10 @@ impl Theme {
             confirm_modal_bg: Color::Rgb(24, 24, 37),
 
             // Other backgrounds
-            selection_bg: Color::Rgb(69, 71, 90),
-            status_bar_bg: Color::Rgb(69, 71, 90),
+            selection_bg: Color::Rgb(214, 219, 237),
+            status_bar_bg: Color::Rgb(214, 219, 237),
             search_bg: bg,
+            search_focused_bg: Color::Rgb(227, 232, 250),
 
             // Indicators
             selection_indicator_compact: None,
@@ -236,6 +238,7 @@ impl Theme {
             selection_bg: Color::Rgb(188, 192, 204),
             status_bar_bg: Color::Rgb(188, 192, 204),
             search_bg: bg,
+            search_focused_bg: Color::Rgb(214, 219, 237),
 
             selection_indicator_compact: None,
             selection_indicator_comfortable: None,
@@ -322,6 +325,7 @@ impl Theme {
             selection_bg: Color::Rgb(36, 40, 59),
             status_bar_bg: Color::Rgb(36, 40, 59),
             search_bg: bg,
+            search_focused_bg: Color::Rgb(49, 50, 68),
 
             selection_indicator_compact: None,
             selection_indicator_comfortable: None,
@@ -408,6 +412,7 @@ impl Theme {
             selection_bg: Color::Rgb(36, 40, 59),
             status_bar_bg: Color::Rgb(36, 40, 59),
             search_bg: bg,
+            search_focused_bg: Color::Rgb(49, 50, 68),
 
             selection_indicator_compact: None,
             selection_indicator_comfortable: None,
@@ -494,6 +499,7 @@ impl Theme {
             selection_bg: Color::Rgb(214, 219, 237),
             status_bar_bg: Color::Rgb(214, 219, 237),
             search_bg: bg,
+            search_focused_bg: Color::Rgb(227, 232, 250),
 
             selection_indicator_compact: None,
             selection_indicator_comfortable: None,
@@ -632,6 +638,7 @@ impl Theme {
                 "selection_bg" => theme.selection_bg = color,
                 "status_bar_bg" => theme.status_bar_bg = color,
                 "search_bg" => theme.search_bg = color,
+                "search_focused_bg" => theme.search_focused_bg = color,
                 _ => {} // Ignore unknown backgrounds
             }
         }
@@ -775,6 +782,10 @@ impl Theme {
             fmt_rgb(self.status_bar_bg)
         ));
         output.push_str(&format!("search_bg = {}\n", fmt_rgb(self.search_bg)));
+        output.push_str(&format!(
+            "search_focused_bg = {}\n",
+            fmt_rgb(self.search_focused_bg)
+        ));
         output.push('\n');
 
         // Indicators section

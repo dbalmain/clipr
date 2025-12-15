@@ -22,18 +22,11 @@ const SEARCH_HINTS: &[(&[&str], &str)] = &[
     (&["Enter"], "select"),
 ];
 
-const REGISTER_ASSIGN_HINTS: &[(&[&str], &str)] = &[
-    (&["Esc"], "cancel"),
-];
+const REGISTER_ASSIGN_HINTS: &[(&[&str], &str)] = &[(&["Esc"], "cancel")];
 
-const CONFIRM_HINTS: &[(&[&str], &str)] = &[
-    (&["y"], "confirm"),
-    (&["n", "Esc"], "cancel"),
-];
+const CONFIRM_HINTS: &[(&[&str], &str)] = &[(&["y"], "confirm"), (&["n", "Esc"], "cancel")];
 
-const HELP_HINTS: &[(&[&str], &str)] = &[
-    (&["ESC"], "press any key to close help"),
-];
+const HELP_HINTS: &[(&[&str], &str)] = &[(&["ESC"], "press any key to close help")];
 
 const NUMERIC_HINTS: &[(&[&str], &str)] = &[
     (&["j", "k"], "move"),
@@ -53,7 +46,10 @@ fn add_hint<'a>(hints: &mut Vec<Span<'a>>, keys: &[&'a str], description: &'a st
     // Add keys with styled separators
     for (i, key) in keys.iter().enumerate() {
         if i > 0 {
-            hints.push(Span::styled("/", theme.status_desc.add_modifier(Modifier::DIM)));
+            hints.push(Span::styled(
+                "/",
+                theme.status_desc.add_modifier(Modifier::DIM),
+            ));
         }
         hints.push(Span::styled(*key, theme.status_key));
     }
