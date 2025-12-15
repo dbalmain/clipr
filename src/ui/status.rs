@@ -2,7 +2,7 @@ use ratatui::prelude::*;
 use ratatui::widgets::Paragraph;
 
 use super::Theme;
-use crate::app::AppMode;
+use crate::app::{App, AppMode, RegisterFilter};
 
 const NORMAL_HINTS: &[(&[&str], &str)] = &[
     (&["j", "k"], "move"),
@@ -13,7 +13,6 @@ const NORMAL_HINTS: &[(&[&str], &str)] = &[
     (&["d"], "delete"),
     (&["D"], "clear all"),
     (&["Enter"], "copy"),
-    (&["q"], "quit"),
     (&["?"], "help"),
 ];
 
@@ -49,9 +48,26 @@ const THEME_PICKER_HINTS: &[(&[&str], &str)] = &[
     (&["Esc"], "cancel"),
 ];
 
+/// Add a hint with keys and description to the hints vector
+fn add_hint<'a>(hints: &mut Vec<Span<'a>>, keys: &[&'a str], description: &'a str, theme: &Theme) {
+    // Add keys with styled separators
+    for (i, key) in keys.iter().enumerate() {
+        if i > 0 {
+            hints.push(Span::styled("/", theme.status_desc.add_modifier(Modifier::DIM)));
+        }
+        hints.push(Span::styled(*key, theme.status_key));
+    }
+
+    hints.push(Span::raw(" "));
+    hints.push(Span::styled(description, theme.status_desc));
+    hints.push(Span::raw("  "));
+}
+
 /// Render keyboard hints bar showing mode-specific shortcuts
-pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode, theme: &Theme) {
-    let hint_data = match mode {
+pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, app: &App, theme: &Theme) {
+    let mut hints = Vec::new();
+
+    let hint_data = match app.mode {
         AppMode::Normal => NORMAL_HINTS,
         AppMode::Search => SEARCH_HINTS,
         AppMode::RegisterAssign => REGISTER_ASSIGN_HINTS,
@@ -61,20 +77,22 @@ pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, mode: AppMode, theme
         AppMode::ThemePicker => THEME_PICKER_HINTS,
     };
 
-    let mut hints = Vec::new();
-
+    // Add static hints
     for (keys, description) in hint_data {
-        // Add keys with styled separators
-        for (i, key) in keys.iter().enumerate() {
-            if i > 0 {
-                hints.push(Span::styled("/", theme.status_desc.add_modifier(Modifier::DIM)));
-            }
-            hints.push(Span::styled(*key, theme.status_key));
+        add_hint(&mut hints, keys, description, theme);
+    }
+
+    // Add dynamic q/Esc behavior for normal mode
+    if app.mode == AppMode::Normal {
+        if !app.search_query.is_empty() {
+            add_hint(&mut hints, &["q"], "quit", theme);
+            add_hint(&mut hints, &["Esc"], "clear search", theme);
+        } else if app.register_filter != RegisterFilter::None {
+            add_hint(&mut hints, &["q"], "quit", theme);
+            add_hint(&mut hints, &["Esc"], "clear filter", theme);
+        } else {
+            add_hint(&mut hints, &["q", "Esc"], "quit", theme);
         }
-        
-        hints.push(Span::raw(" "));
-        hints.push(Span::styled(*description, theme.status_desc));
-        hints.push(Span::raw("  "));
     }
 
     let paragraph =

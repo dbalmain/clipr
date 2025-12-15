@@ -1130,7 +1130,7 @@ impl App {
         );
 
         // Render mode-specific keyboard hints
-        ui::render_keyboard_hints(frame, keyboard_hints_area, self.mode, &self.theme);
+        ui::render_keyboard_hints(frame, keyboard_hints_area, self, &self.theme);
 
         // Render help overlay if in help mode
         if matches!(self.mode, AppMode::Help) {
