@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use lru::LruCache;
+use tui_input::backend::crossterm::EventHandler;
+use tui_input::Input;
 use notify::{RecommendedWatcher, Watcher};
 use ratatui::Frame;
 use ratatui_image::protocol::StatefulProtocol;
@@ -109,8 +111,8 @@ pub struct App {
     /// Currently selected index in the visible list
     pub selected_index: usize,
 
-    /// Current search query (empty when not in search mode)
-    pub search_query: String,
+    /// Search input with cursor support
+    pub search_input: Input,
 
     /// Filtered and sorted clip IDs from search
     /// Empty means show all clips in chronological order
@@ -263,7 +265,7 @@ impl App {
             _theme_watcher: theme_watcher,
             theme_watch_rx,
             selected_index: 0,
-            search_query: String::new(),
+            search_input: Input::default(),
             search_results: Vec::new(),
             register_key: None,
             numeric_prefix: String::new(),
@@ -281,7 +283,8 @@ impl App {
     /// Get the currently visible clip IDs (either search results or all history)
     /// Applies both search filtering and register filtering
     pub fn visible_clips(&self) -> Vec<u64> {
-        let base_clips: Vec<u64> = if self.search_results.is_empty() && self.search_query.is_empty()
+        let base_clips: Vec<u64> = if self.search_results.is_empty()
+            && self.search_input.value().is_empty()
         {
             // Show all clips in chronological order (newest first)
             self.history.entries().iter().map(|e| e.id).collect()
@@ -386,7 +389,8 @@ impl App {
 
     /// Update search results based on current query
     pub fn update_search_results(&mut self) {
-        if self.search_query.is_empty() {
+        let query = self.search_input.value();
+        if query.is_empty() {
             self.search_results.clear();
             self.selected_index = 0;
             self.request_image_load();
@@ -394,9 +398,7 @@ impl App {
         }
 
         // Perform fuzzy search
-        let results = self
-            .search_index
-            .search(self.history.entries(), &self.search_query);
+        let results = self.search_index.search(self.history.entries(), query);
 
         // Extract just the clip IDs
         self.search_results = results.into_iter().map(|(id, _score)| id).collect();
@@ -538,22 +540,10 @@ impl App {
 
     /// Clear search query and results, returning to full history
     pub fn clear_search(&mut self) {
-        self.search_query.clear();
+        self.search_input.reset();
         self.search_results.clear();
         self.selected_index = 0;
         self.request_image_load();
-    }
-
-    /// Add character to search query
-    pub fn search_input_char(&mut self, c: char) {
-        self.search_query.push(c);
-        self.update_search_results();
-    }
-
-    /// Remove last character from search query
-    pub fn search_backspace(&mut self) {
-        self.search_query.pop();
-        self.update_search_results();
     }
 
     /// Enter register assignment mode
@@ -823,7 +813,7 @@ impl App {
             }
             KeyCode::Esc => {
                 // ESC clears filters in order: search filter, register filter, then quit
-                if !self.search_query.is_empty() {
+                if !self.search_input.value().is_empty() {
                     self.clear_search();
                 } else if self.register_filter != RegisterFilter::None {
                     self.register_filter = RegisterFilter::None;
@@ -843,9 +833,6 @@ impl App {
     /// Handle keys in search mode
     fn handle_search_key(&mut self, key: KeyEvent) -> Result<()> {
         match key.code {
-            KeyCode::Backspace => {
-                self.search_backspace();
-            }
             KeyCode::Up => {
                 self.move_up(1);
             }
@@ -859,11 +846,14 @@ impl App {
                 self.mode = AppMode::Normal;
                 self.select_entry()?;
             }
-            KeyCode::Char(c) => {
-                // All other characters are added to search query
-                self.search_input_char(c);
+            _ => {
+                // Delegate all other keys to tui-input (characters, backspace,
+                // delete, left/right arrows, Ctrl+A/E, Ctrl+W, etc.)
+                let event = Event::Key(key);
+                if self.search_input.handle_event(&event).is_some() {
+                    self.update_search_results();
+                }
             }
-            _ => {}
         }
         Ok(())
     }
@@ -1096,7 +1086,7 @@ impl App {
             ui::clip_list::ClipListRenderContext {
                 selected: self.selected_index,
                 mode: self.mode,
-                search_query: &self.search_query,
+                search_input: &self.search_input,
                 numeric_prefix: &self.numeric_prefix,
                 register_filter: self.register_filter,
                 view_mode: self.view_mode,

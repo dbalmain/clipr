@@ -1,6 +1,7 @@
-use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::layout::{Constraint, Direction, Layout, Position};
 use ratatui::prelude::*;
 use ratatui::widgets::{Cell, List, ListItem, ListState, Paragraph, Row, Table};
+use tui_input::Input;
 use unicode_width::UnicodeWidthStr;
 
 use crate::app::{AppMode, RegisterFilter, ViewMode};
@@ -214,7 +215,7 @@ fn render_comfortable_items(
 pub struct ClipListRenderContext<'a> {
     pub selected: usize,
     pub mode: AppMode,
-    pub search_query: &'a str,
+    pub search_input: &'a Input,
     pub numeric_prefix: &'a str,
     pub register_filter: RegisterFilter,
     pub view_mode: ViewMode,
@@ -253,10 +254,11 @@ pub fn render_clip_list(
     let count_text = format!("{} items", item_count);
 
     // Determine header text and style based on mode and filter
+    let search_query = ctx.search_input.value();
     let (header_left, header_style) = if !ctx.numeric_prefix.is_empty() {
         // Numeric prefix mode: show the prefix being typed with space
         (format!(": {}", ctx.numeric_prefix), ctx.theme.temp_register)
-    } else if matches!(ctx.mode, AppMode::Search) || !ctx.search_query.is_empty() {
+    } else if matches!(ctx.mode, AppMode::Search) || !search_query.is_empty() {
         // Search mode or active search query: show "/ <query>" with filter prefix if active
         let (prefix, style) = match ctx.register_filter {
             RegisterFilter::Temporary => ("[temp]/ ", ctx.theme.temp_register),
@@ -264,14 +266,10 @@ pub fn render_clip_list(
             RegisterFilter::None => ("/ ", ctx.theme.search_input),
         };
 
-        // Add cursor if in search mode
-        let header_with_cursor = if matches!(ctx.mode, AppMode::Search) {
-            format!("{}{}_", prefix, ctx.search_query)
-        } else {
-            format!("{}{}", prefix, ctx.search_query)
-        };
+        // Show search text (cursor will be set via frame.set_cursor_position)
+        let header_text = format!("{}{}", prefix, search_query);
 
-        (header_with_cursor, style)
+        (header_text, style)
     } else {
         // Normal mode with no search: show "Clipboard History" or filter status
         let header = match ctx.register_filter {
@@ -417,5 +415,22 @@ pub fn render_clip_list(
 
             frame.render_stateful_widget(list, list_area, &mut list_state);
         }
+    }
+
+    // Set cursor position when in search mode
+    if matches!(ctx.mode, AppMode::Search) {
+        // Calculate prefix width based on register filter
+        let prefix_width = match ctx.register_filter {
+            RegisterFilter::Temporary => "[temp]/ ".len(),
+            RegisterFilter::Permanent => "[perm]/ ".len(),
+            RegisterFilter::None => "/ ".len(),
+        };
+
+        // Get cursor position accounting for unicode width
+        let cursor_x =
+            header_area.x + prefix_width as u16 + ctx.search_input.visual_cursor() as u16;
+        let cursor_y = header_area.y;
+
+        frame.set_cursor_position(Position::new(cursor_x, cursor_y));
     }
 }

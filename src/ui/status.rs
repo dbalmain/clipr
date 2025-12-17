@@ -80,7 +80,7 @@ pub fn render_keyboard_hints(frame: &mut Frame, area: Rect, app: &App, theme: &T
 
     // Add dynamic q/Esc behavior for normal mode
     if app.mode == AppMode::Normal {
-        if !app.search_query.is_empty() {
+        if !app.search_input.value().is_empty() {
             add_hint(&mut hints, &["q"], "quit", theme);
             add_hint(&mut hints, &["Esc"], "clear search", theme);
         } else if app.register_filter != RegisterFilter::None {
