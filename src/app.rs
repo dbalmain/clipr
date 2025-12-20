@@ -57,6 +57,8 @@ pub enum RegisterFilter {
     Temporary,
     /// Show only clips with permanent registers (activated with ")
     Permanent,
+    /// Show only pinned clips (activated with P)
+    Pinned,
 }
 
 /// View mode for clip list display
@@ -311,6 +313,16 @@ impl App {
                 .filter(|&id| {
                     if let Some(entry) = self.history.get_entry(id) {
                         !entry.permanent_registers.is_empty()
+                    } else {
+                        false
+                    }
+                })
+                .collect(),
+            RegisterFilter::Pinned => base_clips
+                .into_iter()
+                .filter(|&id| {
+                    if let Some(entry) = self.history.get_entry(id) {
+                        entry.pinned
                     } else {
                         false
                     }
@@ -608,6 +620,16 @@ impl App {
         self.request_image_load();
     }
 
+    /// Toggle pinned clips filter
+    pub fn toggle_pinned_filter(&mut self) {
+        self.register_filter = match self.register_filter {
+            RegisterFilter::Pinned => RegisterFilter::None,
+            _ => RegisterFilter::Pinned,
+        };
+        self.selected_index = 0; // Reset selection when filter changes
+        self.request_image_load();
+    }
+
     /// Toggle between Compact and Comfortable view modes
     pub fn toggle_view_mode(&mut self) {
         self.view_mode = match self.view_mode {
@@ -773,6 +795,9 @@ impl App {
             }
             KeyCode::Char('p') => {
                 self.toggle_pin()?;
+            }
+            KeyCode::Char('P') => {
+                self.toggle_pinned_filter();
             }
             KeyCode::Char('/') => {
                 self.enter_search_mode();

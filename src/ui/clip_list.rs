@@ -263,6 +263,7 @@ pub fn render_clip_list(
         let (prefix, style) = match ctx.register_filter {
             RegisterFilter::Temporary => ("[temp]/ ", ctx.theme.temp_register),
             RegisterFilter::Permanent => ("[perm]/ ", ctx.theme.perm_register),
+            RegisterFilter::Pinned => ("[pinned]/ ", ctx.theme.pin_indicator_style),
             RegisterFilter::None => ("/ ", ctx.theme.search_input),
         };
 
@@ -275,11 +276,13 @@ pub fn render_clip_list(
         let header = match ctx.register_filter {
             RegisterFilter::Temporary => "Temporary Registers".to_string(),
             RegisterFilter::Permanent => "Permanent Registers".to_string(),
+            RegisterFilter::Pinned => "Pinned Clips".to_string(),
             RegisterFilter::None => "Clipboard History".to_string(),
         };
         let style = match ctx.register_filter {
             RegisterFilter::Temporary => ctx.theme.temp_register,
             RegisterFilter::Permanent => ctx.theme.perm_register,
+            RegisterFilter::Pinned => ctx.theme.pin_indicator_style,
             RegisterFilter::None => ctx.theme.clip_list_header,
         };
         (header, style)
@@ -423,6 +426,7 @@ pub fn render_clip_list(
         let prefix_width = match ctx.register_filter {
             RegisterFilter::Temporary => "[temp]/ ".len(),
             RegisterFilter::Permanent => "[perm]/ ".len(),
+            RegisterFilter::Pinned => "[pinned]/ ".len(),
             RegisterFilter::None => "/ ".len(),
         };
 
