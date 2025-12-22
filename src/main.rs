@@ -55,6 +55,18 @@ enum Commands {
         /// Theme name (built-in or custom)
         theme_name: String,
     },
+
+    /// Put content from a temporary register to clipboard
+    PutTempRegister {
+        /// Register key (a-z, A-Z, 0-9)
+        register: char,
+    },
+
+    /// Put content from a permanent register to clipboard
+    PutPermRegister {
+        /// Register key (a-z, A-Z, 0-9)
+        register: char,
+    },
 }
 
 fn main() -> Result<()> {
@@ -70,6 +82,8 @@ fn main() -> Result<()> {
         Some(Commands::Stats) => cmd_stats(),
         Some(Commands::History { limit }) => cmd_history(limit),
         Some(Commands::ExportTheme { theme_name }) => cmd_export_theme(&theme_name),
+        Some(Commands::PutTempRegister { register }) => cmd_put_temp_register(register),
+        Some(Commands::PutPermRegister { register }) => cmd_put_perm_register(register),
         None => {
             // Default: launch TUI
             cmd_tui()
@@ -341,6 +355,87 @@ fn run_tui<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
             break;
         }
     }
+
+    Ok(())
+}
+
+/// Put content from a temporary register to clipboard
+fn cmd_put_temp_register(register: char) -> Result<()> {
+    put_register(false, register)
+}
+
+/// Put content from a permanent register to clipboard
+fn cmd_put_perm_register(register: char) -> Result<()> {
+    put_register(true, register)
+}
+
+/// Common implementation for put-register commands
+fn put_register(is_permanent: bool, register: char) -> Result<()> {
+    // Get directories
+    let (data_dir, config_dir) = ensure_directories()?;
+
+    // Load config to get max_history
+    let config_storage = TomlConfigStorage::new(config_dir.join("clipr.toml"));
+    let config = config_storage.load()?;
+
+    // Load existing history
+    let history_path = data_dir.join("history.bin");
+    let history_storage = BincodeHistoryStorage::new(history_path, config.general.max_history);
+    let mut history = history_storage.load()?;
+
+    // Create and rebuild registry from history to sync register assignments
+    let mut registry = Registry::new();
+    registry.rebuild_from_history(&history);
+
+    // Load permanent registers from config into history
+    registry.load_permanent_from_config(&config, &mut history)?;
+
+    // Get clip ID from register
+    let clip_id = if is_permanent {
+        registry.get_permanent(register)
+    } else {
+        registry.get_temporary(register)
+    };
+
+    let Some(clip_id) = clip_id else {
+        eprintln!("Register '{}' not found", register);
+        return Ok(());
+    };
+
+    // Get clip content
+    let Some(clip) = history.get_entry(clip_id) else {
+        eprintln!("Clip {} not found in history", clip_id);
+        return Ok(());
+    };
+
+    // Create clipboard backend
+    let backend = create_backend()?;
+
+    // Copy to clipboard based on content type
+    match &clip.content {
+        ClipContent::Text(text) => {
+            backend.write_text(text)?;
+            println!("Copied text from register '{}' to clipboard", register);
+        }
+        ClipContent::Image { data, .. } => {
+            if backend.supports_images() {
+                backend.write_image(data)?;
+                println!("Copied image from register '{}' to clipboard", register);
+            } else {
+                eprintln!("Image clipboard not supported by backend");
+                return Ok(());
+            }
+        }
+        ClipContent::File { path, .. } => {
+            // For files, we copy the file path as text
+            backend.write_text(&path.display().to_string())?;
+            println!("Copied file path from register '{}' to clipboard: {}", register, path.display());
+        }
+    }
+
+    // When run from terminal, add to history for future use
+    history.add_entry(clip.content.clone());
+    history_storage.save(&history)?;
 
     Ok(())
 }
