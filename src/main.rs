@@ -56,14 +56,14 @@ enum Commands {
         theme_name: String,
     },
 
-    /// Put content from a temporary register to clipboard
-    PutTempRegister {
+    /// Grab content from a temporary register to clipboard
+    GrabTempRegister {
         /// Register key (a-z, A-Z, 0-9)
         register: char,
     },
 
-    /// Put content from a permanent register to clipboard
-    PutPermRegister {
+    /// Grab content from a permanent register to clipboard
+    GrabPermRegister {
         /// Register key (a-z, A-Z, 0-9)
         register: char,
     },
@@ -82,8 +82,8 @@ fn main() -> Result<()> {
         Some(Commands::Stats) => cmd_stats(),
         Some(Commands::History { limit }) => cmd_history(limit),
         Some(Commands::ExportTheme { theme_name }) => cmd_export_theme(&theme_name),
-        Some(Commands::PutTempRegister { register }) => cmd_put_temp_register(register),
-        Some(Commands::PutPermRegister { register }) => cmd_put_perm_register(register),
+        Some(Commands::GrabTempRegister { register }) => cmd_grab_temp_register(register),
+        Some(Commands::GrabPermRegister { register }) => cmd_grab_perm_register(register),
         None => {
             // Default: launch TUI
             cmd_tui()
@@ -359,18 +359,18 @@ fn run_tui<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
     Ok(())
 }
 
-/// Put content from a temporary register to clipboard
-fn cmd_put_temp_register(register: char) -> Result<()> {
-    put_register(false, register)
+/// Grab content from a temporary register to clipboard
+fn cmd_grab_temp_register(register: char) -> Result<()> {
+    grab_register(false, register)
 }
 
-/// Put content from a permanent register to clipboard
-fn cmd_put_perm_register(register: char) -> Result<()> {
-    put_register(true, register)
+/// Grab content from a permanent register to clipboard
+fn cmd_grab_perm_register(register: char) -> Result<()> {
+    grab_register(true, register)
 }
 
-/// Common implementation for put-register commands
-fn put_register(is_permanent: bool, register: char) -> Result<()> {
+/// Common implementation for grab-register commands
+fn grab_register(is_permanent: bool, register: char) -> Result<()> {
     // Get directories
     let (data_dir, config_dir) = ensure_directories()?;
 
@@ -429,7 +429,11 @@ fn put_register(is_permanent: bool, register: char) -> Result<()> {
         ClipContent::File { path, .. } => {
             // For files, we copy the file path as text
             backend.write_text(&path.display().to_string())?;
-            println!("Copied file path from register '{}' to clipboard: {}", register, path.display());
+            println!(
+                "Copied file path from register '{}' to clipboard: {}",
+                register,
+                path.display()
+            );
         }
     }
 

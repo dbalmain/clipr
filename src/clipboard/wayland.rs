@@ -27,16 +27,9 @@ impl ClipboardBackend for WaylandBackend {
         let mut child = Command::new("wl-copy")
             .arg("--type")
             .arg("text/plain")
-            .stdin(std::process::Stdio::piped())
+            .arg(text)
             .spawn()
             .context("Failed to spawn wl-copy")?;
-
-        use std::io::Write;
-        if let Some(mut stdin) = child.stdin.take() {
-            stdin
-                .write_all(text.as_bytes())
-                .context("Failed to write to wl-copy stdin")?;
-        }
 
         let status = child.wait().context("Failed to wait for wl-copy")?;
 

@@ -1,13 +1,13 @@
 use anyhow::{Context, Result};
-use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use lru::LruCache;
-use tui_input::backend::crossterm::EventHandler;
-use tui_input::Input;
 use notify::{RecommendedWatcher, Watcher};
 use ratatui::Frame;
+use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui_image::protocol::StatefulProtocol;
 use std::num::NonZeroUsize;
 use std::sync::mpsc::{self, Receiver, Sender};
+use tui_input::Input;
+use tui_input::backend::crossterm::EventHandler;
 
 use crate::clipboard::ClipboardBackend;
 use crate::image::ImageProtocol;
@@ -285,15 +285,14 @@ impl App {
     /// Get the currently visible clip IDs (either search results or all history)
     /// Applies both search filtering and register filtering
     pub fn visible_clips(&self) -> Vec<u64> {
-        let base_clips: Vec<u64> = if self.search_results.is_empty()
-            && self.search_input.value().is_empty()
-        {
-            // Show all clips in chronological order (newest first)
-            self.history.entries().iter().map(|e| e.id).collect()
-        } else {
-            // Show search results
-            self.search_results.clone()
-        };
+        let base_clips: Vec<u64> =
+            if self.search_results.is_empty() && self.search_input.value().is_empty() {
+                // Show all clips in chronological order (newest first)
+                self.history.entries().iter().map(|e| e.id).collect()
+            } else {
+                // Show search results
+                self.search_results.clone()
+            };
 
         // Apply register filter if active
         match self.register_filter {
@@ -928,13 +927,13 @@ impl App {
             }
 
             // Commands that use the numeric prefix
-            KeyCode::Char('j') => {
+            KeyCode::Char('j') | KeyCode::Down => {
                 let count = self.numeric_prefix.parse::<usize>().unwrap_or(1);
                 self.move_down(count);
                 self.numeric_prefix.clear();
                 self.mode = AppMode::Normal;
             }
-            KeyCode::Char('k') => {
+            KeyCode::Char('k') | KeyCode::Up => {
                 let count = self.numeric_prefix.parse::<usize>().unwrap_or(1);
                 self.move_up(count);
                 self.numeric_prefix.clear();
