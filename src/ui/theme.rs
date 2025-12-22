@@ -91,8 +91,7 @@ pub struct Theme {
 
     // === Help Modal ===
     pub help_title: Style,
-    pub help_header_main: Style,
-    pub help_header_section: Style,
+    pub help_header: Style,
     pub help_key: Style,
     pub help_desc: Style,
     pub help_footer: Style,
@@ -187,11 +186,8 @@ impl Theme {
             help_title: Style::default()
                 .fg(Color::Rgb(137, 180, 250))
                 .add_modifier(Modifier::BOLD),
-            help_header_main: Style::default()
+            help_header: Style::default()
                 .fg(Color::Rgb(137, 180, 250))
-                .add_modifier(Modifier::BOLD),
-            help_header_section: Style::default()
-                .fg(Color::Rgb(245, 194, 231))
                 .add_modifier(Modifier::BOLD),
             help_key: Style::default()
                 .fg(Color::Rgb(249, 226, 175))
@@ -277,11 +273,8 @@ impl Theme {
             help_title: Style::default()
                 .fg(Color::Rgb(30, 102, 245))
                 .add_modifier(Modifier::BOLD),
-            help_header_main: Style::default()
+            help_header: Style::default()
                 .fg(Color::Rgb(30, 102, 245))
-                .add_modifier(Modifier::BOLD),
-            help_header_section: Style::default()
-                .fg(Color::Rgb(234, 118, 203))
                 .add_modifier(Modifier::BOLD),
             help_key: Style::default()
                 .fg(Color::Rgb(223, 142, 29))
@@ -364,12 +357,10 @@ impl Theme {
             help_title: Style::default()
                 .fg(Color::Rgb(125, 207, 255))
                 .add_modifier(Modifier::BOLD),
-            help_header_main: Style::default()
+            help_header: Style::default()
                 .fg(Color::Rgb(125, 207, 255))
                 .add_modifier(Modifier::BOLD),
-            help_header_section: Style::default()
-                .fg(Color::Rgb(187, 154, 247))
-                .add_modifier(Modifier::BOLD),
+            
             help_key: Style::default()
                 .fg(Color::Rgb(224, 175, 104))
                 .add_modifier(Modifier::BOLD),
@@ -451,12 +442,10 @@ impl Theme {
             help_title: Style::default()
                 .fg(Color::Rgb(125, 207, 255))
                 .add_modifier(Modifier::BOLD),
-            help_header_main: Style::default()
+            help_header: Style::default()
                 .fg(Color::Rgb(125, 207, 255))
                 .add_modifier(Modifier::BOLD),
-            help_header_section: Style::default()
-                .fg(Color::Rgb(187, 154, 247))
-                .add_modifier(Modifier::BOLD),
+            
             help_key: Style::default()
                 .fg(Color::Rgb(224, 175, 104))
                 .add_modifier(Modifier::BOLD),
@@ -538,10 +527,7 @@ impl Theme {
             help_title: Style::default()
                 .fg(Color::Rgb(34, 94, 168))
                 .add_modifier(Modifier::BOLD),
-            help_header_main: Style::default()
-                .fg(Color::Rgb(34, 94, 168))
-                .add_modifier(Modifier::BOLD),
-            help_header_section: Style::default()
+            help_header: Style::default()
                 .fg(Color::Rgb(136, 57, 239))
                 .add_modifier(Modifier::BOLD),
             help_key: Style::default()
@@ -684,8 +670,8 @@ impl Theme {
                 "search_border" => theme.search_border = style,
                 "search_title" => theme.search_title = style,
                 "help_title" => theme.help_title = style,
-                "help_header_main" => theme.help_header_main = style,
-                "help_header_section" => theme.help_header_section = style,
+                "help_header" => theme.help_header = style,
+
                 "help_key" => theme.help_key = style,
                 "help_desc" => theme.help_desc = style,
                 "help_footer" => theme.help_footer = style,
@@ -874,12 +860,12 @@ impl Theme {
         ));
         output.push_str(&format!("help_title = {}\n", fmt_style(self.help_title)));
         output.push_str(&format!(
-            "help_header_main = {}\n",
-            fmt_style(self.help_header_main)
+            "help_header = {}\n",
+            fmt_style(self.help_header)
         ));
         output.push_str(&format!(
-            "help_header_section = {}\n",
-            fmt_style(self.help_header_section)
+            "help_header = {}\n",
+            fmt_style(self.help_header)
         ));
         output.push_str(&format!("help_key = {}\n", fmt_style(self.help_key)));
         output.push_str(&format!("help_desc = {}\n", fmt_style(self.help_desc)));
