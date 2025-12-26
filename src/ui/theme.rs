@@ -59,6 +59,7 @@ pub struct Theme {
     // === Indicators ===
     pub selection_indicator_compact: Option<String>,
     pub selection_indicator_comfortable: Option<String>,
+    pub selection_indicator_repeats_comfortable: bool,
     pub selection_indicator_style: Style,
     pub pin_indicator: String,
     pub pin_indicator_style: Style,
@@ -146,6 +147,7 @@ impl Theme {
             // Indicators
             selection_indicator_compact: None,
             selection_indicator_comfortable: None,
+            selection_indicator_repeats_comfortable: true,
             selection_indicator_style: Style::default().fg(Color::Rgb(137, 180, 250)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(249, 226, 175)),
@@ -238,6 +240,7 @@ impl Theme {
 
             selection_indicator_compact: None,
             selection_indicator_comfortable: None,
+            selection_indicator_repeats_comfortable: false,
             selection_indicator_style: Style::default().fg(Color::Rgb(30, 102, 245)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(223, 142, 29)),
@@ -309,6 +312,7 @@ impl Theme {
             default_bg: bg,
 
             clip_list_bg: bg,
+
             preview_bg: bg,
 
             help_modal_bg: Color::Rgb(22, 24, 35),
@@ -322,6 +326,7 @@ impl Theme {
 
             selection_indicator_compact: None,
             selection_indicator_comfortable: None,
+            selection_indicator_repeats_comfortable: false,
             selection_indicator_style: Style::default().fg(Color::Rgb(125, 207, 255)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(224, 175, 104)),
@@ -360,7 +365,7 @@ impl Theme {
             help_header: Style::default()
                 .fg(Color::Rgb(125, 207, 255))
                 .add_modifier(Modifier::BOLD),
-            
+
             help_key: Style::default()
                 .fg(Color::Rgb(224, 175, 104))
                 .add_modifier(Modifier::BOLD),
@@ -407,6 +412,7 @@ impl Theme {
 
             selection_indicator_compact: None,
             selection_indicator_comfortable: None,
+            selection_indicator_repeats_comfortable: false,
             selection_indicator_style: Style::default().fg(Color::Rgb(125, 207, 255)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(224, 175, 104)),
@@ -445,7 +451,7 @@ impl Theme {
             help_header: Style::default()
                 .fg(Color::Rgb(125, 207, 255))
                 .add_modifier(Modifier::BOLD),
-            
+
             help_key: Style::default()
                 .fg(Color::Rgb(224, 175, 104))
                 .add_modifier(Modifier::BOLD),
@@ -492,6 +498,7 @@ impl Theme {
 
             selection_indicator_compact: None,
             selection_indicator_comfortable: None,
+            selection_indicator_repeats_comfortable: false,
             selection_indicator_style: Style::default().fg(Color::Rgb(34, 94, 168)),
             pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
             pin_indicator_style: Style::default().fg(Color::Rgb(150, 80, 0)),
@@ -630,12 +637,14 @@ impl Theme {
         }
 
         // Apply indicators
-        if let Some(selection) = &def.indicators.selection_compact {
+        if let Some(selection) = &def.indicators.selection_indicator_compact {
             theme.selection_indicator_compact = Some(selection.clone());
         }
-        if let Some(selection) = &def.indicators.selection_comfortable {
+        if let Some(selection) = &def.indicators.selection_indicator_comfortable {
             theme.selection_indicator_comfortable = Some(selection.clone());
         }
+        theme.selection_indicator_repeats_comfortable =
+            def.indicators.selection_indicator_repeats_comfortable;
         if let Some(pin) = &def.indicators.pin {
             theme.pin_indicator = pin.clone();
         }
@@ -777,11 +786,15 @@ impl Theme {
         // Indicators section
         output.push_str("[indicators]\n");
         if let Some(ref sel) = self.selection_indicator_compact {
-            output.push_str(&format!("selection_compact = \"{}\"\n", sel));
+            output.push_str(&format!("selection_indicator_compact = \"{}\"\n", sel));
         }
         if let Some(ref sel) = self.selection_indicator_comfortable {
-            output.push_str(&format!("selection_comfortable = \"{}\"\n", sel));
+            output.push_str(&format!("selection_indicator_comfortable = \"{}\"\n", sel));
         }
+        output.push_str(&format!(
+            "selection_indicator_repeats_comfortable = {}\n",
+            self.selection_indicator_repeats_comfortable
+        ));
         output.push_str(&format!("pin = \"{}\"\n", self.pin_indicator));
         if let Some(ref div) = self.divider_compact {
             output.push_str(&format!("divider_compact = \"{}\"\n", div));
@@ -859,14 +872,8 @@ impl Theme {
             fmt_style(self.search_title)
         ));
         output.push_str(&format!("help_title = {}\n", fmt_style(self.help_title)));
-        output.push_str(&format!(
-            "help_header = {}\n",
-            fmt_style(self.help_header)
-        ));
-        output.push_str(&format!(
-            "help_header = {}\n",
-            fmt_style(self.help_header)
-        ));
+        output.push_str(&format!("help_header = {}\n", fmt_style(self.help_header)));
+        output.push_str(&format!("help_header = {}\n", fmt_style(self.help_header)));
         output.push_str(&format!("help_key = {}\n", fmt_style(self.help_key)));
         output.push_str(&format!("help_desc = {}\n", fmt_style(self.help_desc)));
         output.push_str(&format!("help_footer = {}\n", fmt_style(self.help_footer)));
@@ -997,8 +1004,12 @@ pub struct ThemeDefinition {
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct IndicatorsDef {
-    pub selection_compact: Option<String>,
-    pub selection_comfortable: Option<String>,
+    #[serde(alias = "selection_compact")]
+    pub selection_indicator_compact: Option<String>,
+    #[serde(alias = "selection_comfortable")]
+    pub selection_indicator_comfortable: Option<String>,
+    #[serde(default)]
+    pub selection_indicator_repeats_comfortable: bool,
     pub pin: Option<String>,
     pub divider_compact: Option<String>,
     pub divider_comfortable: Option<String>,

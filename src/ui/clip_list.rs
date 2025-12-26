@@ -1,6 +1,6 @@
 use ratatui::layout::{Constraint, Direction, Layout, Position};
 use ratatui::prelude::*;
-use ratatui::widgets::{Cell, List, ListItem, ListState, Paragraph, Row, Table};
+use ratatui::widgets::{Cell, Paragraph, Row, Table};
 use tui_input::Input;
 use unicode_width::UnicodeWidthStr;
 
@@ -112,103 +112,145 @@ fn render_compact_table_rows<'a>(
         .collect()
 }
 
-/// Render list items in comfortable mode (two lines per clip)
-fn render_comfortable_items(
+/// Render table rows for comfortable mode (three rows per clip: preview, metadata, spacing)
+fn render_comfortable_table_rows<'a>(
     entries: &[&ClipEntry],
     selected: usize,
     available_width: usize,
-    theme: &super::Theme,
-) -> Vec<ListItem<'static>> {
+    theme: &'a super::Theme,
+) -> Vec<Row<'a>> {
     // Pre-create pin spans to avoid cloning in the loop
     let pin_padding = " ".repeat(3usize.saturating_sub(theme.pin_indicator.width()));
     let pin_str = format!("{}{} ", pin_padding, theme.pin_indicator);
-    let pin_span = Span::styled(pin_str, theme.pin_indicator_style);
-    let no_pin_span = Span::raw("    ");
 
-    entries
-        .iter()
-        .enumerate()
-        .map(|(i, entry)| {
-            // Determine text color and styling based on selection
-            let is_selected = i == selected;
+    // Get selection indicator settings
+    let indicator = theme
+        .selection_indicator_comfortable
+        .as_deref()
+        .unwrap_or("");
+    let indicator_repeats = theme.selection_indicator_repeats_comfortable;
 
-            // Use clip_text or clip_text_selected for preview
-            let preview_style = if is_selected {
-                theme.clip_text_selected
-            } else {
-                theme.clip_text
-            };
+    let mut rows = Vec::new();
 
-            // Metadata not affected by selection
-            let metadata_color = theme.timestamp.fg.unwrap_or(theme.default_fg);
+    for (i, entry) in entries.iter().enumerate() {
+        let is_selected = i == selected;
 
-            // LINE 1: Number + Preview
-            let mut line1_spans = Vec::new();
-            let number = format!("{:3} ", i);
-            line1_spans.push(Span::styled(number, theme.clip_number));
+        // Use clip_text or clip_text_selected for preview
+        let preview_style = if is_selected {
+            theme.clip_text_selected
+        } else {
+            theme.clip_text
+        };
 
-            // Get preview text (full width minus number)
-            let max_preview_len = available_width.saturating_sub(3);
-            let preview = entry.preview(max_preview_len);
-            line1_spans.push(Span::styled(preview, preview_style));
+        // Metadata not affected by selection
+        let metadata_color = theme.timestamp.fg.unwrap_or(theme.default_fg);
 
-            // LINE 2: Pin + Date + Registers
-            let mut line2_spans = Vec::new();
+        // ROW 1: Indicator space (always) + Number + Preview
+        let mut row1_spans = Vec::new();
 
-            // Pin directly under the clip number
-            if entry.pinned {
-                line2_spans.push(pin_span.clone());
-            } else {
-                line2_spans.push(no_pin_span.clone());
-            }
+        // Always add space for indicator (show indicator if selected, otherwise empty space)
+        let indicator_width = if !indicator.is_empty() {
+            indicator.len() + 1 // indicator + space
+        } else {
+            0
+        };
 
-            // Add timestamp
-            let timestamp_secs = entry
-                .timestamp
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_secs() as i64)
-                .unwrap_or(0);
-            let timestamp_str = format_timestamp(timestamp_secs);
-            line2_spans.push(Span::styled(
-                timestamp_str.clone(),
-                Style::default().fg(metadata_color),
-            ));
-
-            // Calculate registers
-            let mut register_strs = Vec::new();
-            for &reg in &entry.temporary_registers {
-                register_strs.push((format!("'{}", reg), theme.temp_register));
-            }
-            for &reg in &entry.permanent_registers {
-                register_strs.push((format!("\"{}", reg), theme.perm_register));
-            }
-
-            // Add registers 2 spaces after the date
-            if !register_strs.is_empty() {
-                line2_spans.push(Span::raw("  "));
-
-                for (text, style) in register_strs.iter() {
-                    line2_spans.push(Span::raw(" "));
-                    line2_spans.push(Span::styled(text.clone(), *style));
-                }
-            }
-
-            // Add empty line for spacing
-            let lines = vec![
-                Line::from(line1_spans),
-                Line::from(line2_spans),
-                Line::from(vec![Span::raw("")]),
-            ];
-            let item = ListItem::new(lines);
-
-            // Apply selection background to entire item (all 3 lines) if selected
+        if !indicator.is_empty() {
             if is_selected {
-                item.style(Style::default().bg(theme.selection_bg))
+                row1_spans.push(Span::styled(indicator, theme.selection_indicator_style));
             } else {
-                item
+                // Add empty space for alignment
+                let spacing = " ".repeat(indicator.width());
+                row1_spans.push(Span::raw(spacing));
             }
-        })
-        .collect()
+        }
+
+        let number = format!("{:3} ", i);
+        row1_spans.push(Span::styled(number, theme.clip_number));
+
+        // Get preview text (full width minus number, indicator, and spacing)
+        let max_preview_len = available_width.saturating_sub(6 + indicator_width);
+        let preview = entry.preview(max_preview_len);
+        row1_spans.push(Span::styled(preview, preview_style));
+
+        let row1_cell = Cell::from(Line::from(row1_spans));
+        let row1 = Row::new(vec![row1_cell]);
+        let row1 = if is_selected {
+            row1.style(Style::default().bg(theme.selection_bg))
+        } else {
+            row1
+        };
+        rows.push(row1);
+
+        // ROW 2: Indicator space (always) + Pin + Date + Registers
+        let mut line2_spans = Vec::new();
+
+        // Always add space for indicator (show indicator if selected AND repeats, otherwise empty space)
+        if !indicator.is_empty() {
+            if is_selected && indicator_repeats {
+                line2_spans.push(Span::styled(indicator, theme.selection_indicator_style));
+            } else {
+                // Add empty space equal to indicator width + 1 for alignment
+                let spacing = " ".repeat(indicator.width());
+                line2_spans.push(Span::raw(spacing));
+            }
+        }
+
+        // Pin directly under the clip number
+        let pin_span = if entry.pinned {
+            Span::styled(pin_str.clone(), theme.pin_indicator_style)
+        } else {
+            Span::raw("    ")
+        };
+        line2_spans.push(pin_span);
+
+        // Add timestamp
+        let timestamp_secs = entry
+            .timestamp
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        let timestamp_str = format_timestamp(timestamp_secs);
+        line2_spans.push(Span::styled(
+            timestamp_str,
+            Style::default().fg(metadata_color),
+        ));
+
+        // Calculate registers
+        let mut register_strs = Vec::new();
+        for &reg in &entry.temporary_registers {
+            register_strs.push((format!("'{}", reg), theme.temp_register));
+        }
+        for &reg in &entry.permanent_registers {
+            register_strs.push((format!("\"{}", reg), theme.perm_register));
+        }
+
+        // Add registers 2 spaces after the date
+        if !register_strs.is_empty() {
+            line2_spans.push(Span::raw("  "));
+
+            for (text, style) in register_strs.iter() {
+                line2_spans.push(Span::raw(" "));
+                line2_spans.push(Span::styled(text.clone(), *style));
+            }
+        }
+
+        let row2_cell = Cell::from(Line::from(line2_spans));
+        let row2 = Row::new(vec![row2_cell]);
+        let row2 = if is_selected {
+            row2.style(Style::default().bg(theme.selection_bg))
+        } else {
+            row2
+        };
+        rows.push(row2);
+
+        // ROW 3: Empty spacing line (no background even when selected)
+        let row3_cell = Cell::from("");
+        let row3 = Row::new(vec![row3_cell]);
+        rows.push(row3);
+    }
+
+    rows
 }
 
 /// Context for rendering the clip list
@@ -400,23 +442,20 @@ pub fn render_clip_list(
             frame.render_stateful_widget(table, list_area, &mut table_state);
         }
         ViewMode::Comfortable => {
-            // Use List for comfortable mode
-            let items = render_comfortable_items(entries, ctx.selected, available_width, ctx.theme);
+            // Use Table for comfortable mode
+            // Indicators are manually added to row content based on selection_indicator_repeats_comfortable
+            let rows =
+                render_comfortable_table_rows(entries, ctx.selected, available_width, ctx.theme);
 
-            let highlight = ctx
-                .theme
-                .selection_indicator_comfortable
-                .as_deref()
-                .unwrap_or("");
-            let list = List::new(items)
-                .highlight_symbol(highlight)
-                .scroll_padding(1)
+            let table = Table::new(rows, [Constraint::Min(10)])
                 .style(Style::default().bg(ctx.theme.clip_list_bg));
 
-            let mut list_state = ListState::default();
-            list_state.select(Some(ctx.selected));
+            // Select the first row of the selected clip for scrolling purposes
+            // Each clip has 3 rows (preview, metadata, spacing)
+            let mut table_state = ratatui::widgets::TableState::default();
+            table_state.select(Some(ctx.selected * 3));
 
-            frame.render_stateful_widget(list, list_area, &mut list_state);
+            frame.render_stateful_widget(table, list_area, &mut table_state);
         }
     }
 

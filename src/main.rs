@@ -60,12 +60,18 @@ enum Commands {
     GrabTempRegister {
         /// Register key (a-z, A-Z, 0-9)
         register: char,
+        /// Write to stdout instead of clipboard
+        #[arg(long)]
+        stdout: bool,
     },
 
     /// Grab content from a permanent register to clipboard
     GrabPermRegister {
         /// Register key (a-z, A-Z, 0-9)
         register: char,
+        /// Write to stdout instead of clipboard
+        #[arg(long)]
+        stdout: bool,
     },
 }
 
@@ -82,8 +88,8 @@ fn main() -> Result<()> {
         Some(Commands::Stats) => cmd_stats(),
         Some(Commands::History { limit }) => cmd_history(limit),
         Some(Commands::ExportTheme { theme_name }) => cmd_export_theme(&theme_name),
-        Some(Commands::GrabTempRegister { register }) => cmd_grab_temp_register(register),
-        Some(Commands::GrabPermRegister { register }) => cmd_grab_perm_register(register),
+        Some(Commands::GrabTempRegister { register, stdout }) => cmd_grab_temp_register(register, stdout),
+        Some(Commands::GrabPermRegister { register, stdout }) => cmd_grab_perm_register(register, stdout),
         None => {
             // Default: launch TUI
             cmd_tui()
@@ -360,17 +366,17 @@ fn run_tui<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
 }
 
 /// Grab content from a temporary register to clipboard
-fn cmd_grab_temp_register(register: char) -> Result<()> {
-    grab_register(false, register)
+fn cmd_grab_temp_register(register: char, use_stdout: bool) -> Result<()> {
+    grab_register(false, register, use_stdout)
 }
 
 /// Grab content from a permanent register to clipboard
-fn cmd_grab_perm_register(register: char) -> Result<()> {
-    grab_register(true, register)
+fn cmd_grab_perm_register(register: char, use_stdout: bool) -> Result<()> {
+    grab_register(true, register, use_stdout)
 }
 
 /// Common implementation for grab-register commands
-fn grab_register(is_permanent: bool, register: char) -> Result<()> {
+fn grab_register(is_permanent: bool, register: char, use_stdout: bool) -> Result<()> {
     // Get directories
     let (data_dir, config_dir) = ensure_directories()?;
 
@@ -408,38 +414,54 @@ fn grab_register(is_permanent: bool, register: char) -> Result<()> {
         return Ok(());
     };
 
-    // Create clipboard backend
-    let backend = create_backend()?;
-
-    // Copy to clipboard based on content type
-    match &clip.content {
-        ClipContent::Text(text) => {
-            backend.write_text(text)?;
-            println!("Copied text from register '{}' to clipboard", register);
-        }
-        ClipContent::Image { data, .. } => {
-            if backend.supports_images() {
-                backend.write_image(data)?;
-                println!("Copied image from register '{}' to clipboard", register);
-            } else {
-                eprintln!("Image clipboard not supported by backend");
-                return Ok(());
+    if use_stdout {
+        // Write to stdout instead of clipboard
+        match &clip.content {
+            ClipContent::Text(text) => {
+                print!("{}", text);
+            }
+            ClipContent::Image { data, .. } => {
+                use std::io::Write;
+                io::stdout().write_all(data)?;
+            }
+            ClipContent::File { path, .. } => {
+                print!("{}", path.display());
             }
         }
-        ClipContent::File { path, .. } => {
-            // For files, we copy the file path as text
-            backend.write_text(&path.display().to_string())?;
-            println!(
-                "Copied file path from register '{}' to clipboard: {}",
-                register,
-                path.display()
-            );
-        }
-    }
+    } else {
+        // Create clipboard backend
+        let backend = create_backend()?;
 
-    // When run from terminal, add to history for future use
-    history.add_entry(clip.content.clone());
-    history_storage.save(&history)?;
+        // Copy to clipboard based on content type
+        match &clip.content {
+            ClipContent::Text(text) => {
+                backend.write_text(text)?;
+                println!("Copied text from register '{}' to clipboard", register);
+            }
+            ClipContent::Image { data, .. } => {
+                if backend.supports_images() {
+                    backend.write_image(data)?;
+                    println!("Copied image from register '{}' to clipboard", register);
+                } else {
+                    eprintln!("Image clipboard not supported by backend");
+                    return Ok(());
+                }
+            }
+            ClipContent::File { path, .. } => {
+                // For files, we copy the file path as text
+                backend.write_text(&path.display().to_string())?;
+                println!(
+                    "Copied file path from register '{}' to clipboard: {}",
+                    register,
+                    path.display()
+                );
+            }
+        }
+
+        // When run from terminal, add to history for future use
+        history.add_entry(clip.content.clone());
+        history_storage.save(&history)?;
+    }
 
     Ok(())
 }
