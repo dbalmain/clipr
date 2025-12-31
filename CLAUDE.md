@@ -31,9 +31,9 @@ Rust (stable channel, latest 3 releases supported - currently 1.75+): Follow sta
 <!-- MANUAL ADDITIONS START -->
 ## Workflow
 
-- **Trunk-based Development**: Work directly on the `master` branch. No feature branches.
-  - All commits go directly to master
+- **Trunk-based Development**: Work directly on the `main` branch. No feature branches.
+  - All commits go directly to main
   - Iterate quickly with small, incremental commits
-  - Keep master always in a working state
+  - Keep main always in a working state
 <!-- MANUAL ADDITIONS END -->
 - Do not do `cargo build --release` unless requested. Always build do `cargo build`.
