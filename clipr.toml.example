@@ -17,6 +17,11 @@ max_image_preview_size_bytes = 10485760  # 10MB
 # Exit TUI after selecting a clip (true) or stay open (false)
 exit_on_select = true
 
+# Delay in milliseconds before pasting with Space key (default: 200)
+# Increase this if pasting from a floating terminal window doesn't work
+# The delay allows the terminal window to close and focus to return
+paste_delay_ms = 200
+
 # Enable debug logging (can also use RUST_LOG env var)
 debug_logging = false
 

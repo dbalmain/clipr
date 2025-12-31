@@ -13,6 +13,7 @@ const NORMAL_HINTS: &[(&[&str], &str)] = &[
     (&["d"], "delete"),
     (&["D"], "clear all"),
     (&["Enter"], "copy"),
+    (&["Space"], "paste"),
     (&["?"], "help"),
 ];
 

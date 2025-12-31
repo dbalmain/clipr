@@ -331,6 +331,35 @@ fn cmd_tui() -> Result<()> {
     // Save history
     history_storage.save(&app.history)?;
 
+    // Handle paste request - write to clipboard then spawn background process to paste
+    if let clipr::app::PasteRequest::PasteFromClipboard(content) = &app.paste_request {
+        let backend = create_backend()?;
+        match content {
+            ClipContent::Text(text) => {
+                backend.write_text(text)?;
+            }
+            ClipContent::Image { data, .. } => {
+                backend.write_image(data)?;
+            }
+            ClipContent::File { path, .. } => {
+                backend.write_text(&path.display().to_string())?;
+            }
+        }
+
+        // Spawn detached background process to simulate Ctrl-V after delay
+        // setsid creates new session so process survives after clipr exits
+        let delay_ms = app.config.general.paste_delay_ms;
+        let cmd = format!(
+            "setsid sh -c \"sleep {} && wtype -M ctrl v -m ctrl\" >/dev/null 2>&1 &",
+            delay_ms as f64 / 1000.0
+        );
+
+        std::process::Command::new("sh")
+            .arg("-c")
+            .arg(&cmd)
+            .spawn()?;
+    }
+
     result
 }
 

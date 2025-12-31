@@ -66,6 +66,17 @@ impl ClipboardBackend for WaylandBackend {
         Ok(())
     }
 
+    fn paste_from_clipboard(&self) -> Result<()> {
+        // Simulate Ctrl-V using wtype
+        Command::new("wtype")
+            .args(["-M", "ctrl", "v", "-m", "ctrl"])
+            .spawn()
+            .context("Failed to spawn wtype for Ctrl-V. Make sure wtype is installed.")?;
+
+        log::debug!("Simulating Ctrl-V paste via wtype");
+        Ok(())
+    }
+
     fn supports_images(&self) -> bool {
         true
     }

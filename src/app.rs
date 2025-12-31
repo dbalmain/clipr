@@ -70,6 +70,15 @@ pub enum ViewMode {
     Comfortable,
 }
 
+/// Paste request - content to paste after TUI exits
+#[derive(Debug, Clone)]
+pub enum PasteRequest {
+    /// No paste requested
+    None,
+    /// Write to clipboard and simulate Ctrl-V (works for all content types)
+    PasteFromClipboard(crate::models::ClipContent),
+}
+
 /// Main application state
 pub struct App {
     /// Current interaction mode
@@ -146,6 +155,9 @@ pub struct App {
 
     /// Flag to request application exit
     pub should_quit: bool,
+
+    /// Content to paste after TUI exits (allows terminal to close first)
+    pub paste_request: PasteRequest,
 }
 
 impl App {
@@ -279,6 +291,7 @@ impl App {
             theme_picker_selected: 0,
             current_theme_name,
             should_quit: false,
+            paste_request: PasteRequest::None,
         })
     }
 
@@ -447,6 +460,24 @@ impl App {
         if self.config.general.exit_on_select {
             self.should_quit = true;
         }
+
+        Ok(())
+    }
+
+    /// Request paste after TUI exits
+    ///
+    /// Writes content to clipboard then simulates Ctrl-V to paste.
+    /// Avoids shell escaping issues with special characters in text.
+    pub fn paste_entry(&mut self) -> Result<()> {
+        let clip_id = self.selected_clip_id().context("No clip selected")?;
+
+        let entry = self
+            .history
+            .get_entry(clip_id)
+            .context("Clip not found in history")?;
+
+        self.paste_request = PasteRequest::PasteFromClipboard(entry.content.clone());
+        self.should_quit = true;
 
         Ok(())
     }
@@ -788,6 +819,10 @@ impl App {
             // Actions
             KeyCode::Enter => {
                 self.select_entry()?;
+            }
+            KeyCode::Char(' ') => {
+                // Space - paste entry by simulating keyboard typing
+                self.paste_entry()?;
             }
             KeyCode::Char('m') => {
                 self.enter_register_mode();

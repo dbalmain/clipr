@@ -65,6 +65,11 @@ pub struct GeneralConfig {
     #[serde(default = "default_exit_on_select")]
     pub exit_on_select: bool,
 
+    /// Delay in milliseconds before pasting (allows terminal window to close)
+    /// Increase this if pasting from a floating terminal doesn't work
+    #[serde(default = "default_paste_delay_ms")]
+    pub paste_delay_ms: u64,
+
     /// Enable debug logging
     #[serde(default)]
     pub debug_logging: bool,
@@ -99,6 +104,7 @@ impl Default for GeneralConfig {
             max_image_memory_size_bytes: default_max_image_memory_size(),
             max_image_preview_size_bytes: default_max_image_preview_size(),
             exit_on_select: default_exit_on_select(),
+            paste_delay_ms: default_paste_delay_ms(),
             debug_logging: false,
             theme: default_theme(),
             image_cache_size: default_image_cache_size(),
@@ -128,6 +134,10 @@ fn default_max_image_preview_size() -> u64 {
 
 fn default_exit_on_select() -> bool {
     true
+}
+
+fn default_paste_delay_ms() -> u64 {
+    200 // 200ms delay to allow terminal window to close
 }
 
 fn default_theme() -> String {
