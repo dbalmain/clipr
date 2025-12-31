@@ -13,7 +13,7 @@ const NORMAL_HINTS: &[(&[&str], &str)] = &[
     (&["d"], "delete"),
     (&["D"], "clear all"),
     (&["Enter"], "copy"),
-    (&["Space"], "paste"),
+    (&["Ctrl-Spc"], "paste"),
     (&["?"], "help"),
 ];
 
@@ -21,6 +21,7 @@ const SEARCH_HINTS: &[(&[&str], &str)] = &[
     (&["↑", "↓"], "move"),
     (&["Esc"], "cancel"),
     (&["Enter"], "select"),
+    (&["Ctrl-Spc"], "paste"),
 ];
 
 const REGISTER_ASSIGN_HINTS: &[(&[&str], &str)] = &[(&["Esc"], "cancel")];

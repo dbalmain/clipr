@@ -820,8 +820,8 @@ impl App {
             KeyCode::Enter => {
                 self.select_entry()?;
             }
-            KeyCode::Char(' ') => {
-                // Space - paste entry by simulating keyboard typing
+            KeyCode::Char(' ') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                // Ctrl-Space - paste entry via Ctrl-V simulation
                 self.paste_entry()?;
             }
             KeyCode::Char('m') => {
@@ -904,6 +904,10 @@ impl App {
             KeyCode::Enter => {
                 self.mode = AppMode::Normal;
                 self.select_entry()?;
+            }
+            KeyCode::Char(' ') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                // Ctrl-Space - paste entry via Ctrl-V simulation
+                self.paste_entry()?;
             }
             _ => {
                 // Delegate all other keys to tui-input (characters, backspace,

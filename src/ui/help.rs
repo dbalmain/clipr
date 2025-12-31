@@ -48,7 +48,7 @@ const HELP_SECTIONS: &[HelpSection] = &[
         title: "Actions",
         items: &[
             (&["Enter"], "Copy to clipboard"),
-            (&["Space"], "Paste via Ctrl-V"),
+            (&["Ctrl-Space"], "Paste via Ctrl-V"),
             (
                 &["m<letter>"],
                 "Assign to temporary register (like vim marks)",
