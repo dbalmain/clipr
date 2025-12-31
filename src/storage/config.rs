@@ -94,6 +94,18 @@ pub struct GeneralConfig {
     /// Enable theme development mode (auto-reload theme file on changes)
     #[serde(default)]
     pub theme_dev_mode: bool,
+
+    /// File log level (error/warn/info/debug/trace)
+    #[serde(default = "default_file_log_level")]
+    pub file_log_level: String,
+
+    /// Flash message log level in TUI (error/warn/info/debug/trace)
+    #[serde(default = "default_flash_message_level")]
+    pub flash_message_level: String,
+
+    /// Flash message duration in milliseconds
+    #[serde(default = "default_flash_message_duration_ms")]
+    pub flash_message_duration_ms: u64,
 }
 
 impl Default for GeneralConfig {
@@ -111,6 +123,9 @@ impl Default for GeneralConfig {
             view_mode: default_view_mode(),
             show_preview_metadata: default_show_preview_metadata(),
             theme_dev_mode: false,
+            file_log_level: default_file_log_level(),
+            flash_message_level: default_flash_message_level(),
+            flash_message_duration_ms: default_flash_message_duration_ms(),
         }
     }
 }
@@ -154,6 +169,18 @@ fn default_view_mode() -> String {
 
 fn default_show_preview_metadata() -> bool {
     false // Opt-in: metadata hidden by default
+}
+
+fn default_file_log_level() -> String {
+    "info".to_string()
+}
+
+fn default_flash_message_level() -> String {
+    "warn".to_string()
+}
+
+fn default_flash_message_duration_ms() -> u64 {
+    5000 // 5 seconds
 }
 
 /// Value for a permanent register entry

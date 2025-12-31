@@ -25,6 +25,18 @@ paste_delay_ms = 200
 # Enable debug logging (can also use RUST_LOG env var)
 debug_logging = false
 
+# Log level for file logging (error/warn/info/debug/trace)
+# Logs are written to ~/.local/share/clipr/clipr.log
+file_log_level = "info"
+
+# Log level for flash messages in TUI (error/warn/info/debug/trace)
+# Flash messages appear at the bottom of the preview pane
+flash_message_level = "warn"
+
+# Flash message duration in milliseconds (default: 5000 = 5 seconds)
+# Messages auto-dismiss after this duration. Press 'c' to clear manually.
+flash_message_duration_ms = 5000
+
 # Permanent Registers
 # Quick access to frequently used content
 # Keys: a-z, A-Z, 0-9 (62 total registers, CASE SENSITIVE)

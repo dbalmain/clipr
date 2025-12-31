@@ -6,11 +6,13 @@ use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui_image::protocol::StatefulProtocol;
 use std::num::NonZeroUsize;
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::time::Instant;
 use tui_input::Input;
 use tui_input::backend::crossterm::EventHandler;
 
 use crate::clipboard::ClipboardBackend;
 use crate::image::ImageProtocol;
+use crate::logging::FlashMessage;
 use crate::models::{ClipboardHistory, Registry, SearchIndex};
 use crate::storage::Config;
 use crate::ui;
@@ -158,6 +160,12 @@ pub struct App {
 
     /// Content to paste after TUI exits (allows terminal to close first)
     pub paste_request: PasteRequest,
+
+    /// Flash messages displayed at bottom of preview
+    pub flash_messages: Vec<FlashMessage>,
+
+    /// Receiver for flash messages from logger
+    flash_rx: Option<Receiver<FlashMessage>>,
 }
 
 impl App {
@@ -168,6 +176,7 @@ impl App {
         config: Config,
         clipboard_backend: Box<dyn ClipboardBackend>,
         mut image_protocol: ImageProtocol,
+        flash_rx: Option<Receiver<FlashMessage>>,
     ) -> Result<Self> {
         // Create channels for async image loading
         let (load_tx, load_rx) = mpsc::channel::<ImageLoadRequest>();
@@ -292,7 +301,36 @@ impl App {
             current_theme_name,
             should_quit: false,
             paste_request: PasteRequest::None,
+            flash_messages: Vec::new(),
+            flash_rx,
         })
+    }
+
+    /// Poll flash message receiver and add to queue
+    pub fn poll_flash_messages(&mut self) {
+        if let Some(rx) = &self.flash_rx {
+            while let Ok(msg) = rx.try_recv() {
+                self.flash_messages.push(msg);
+            }
+        }
+    }
+
+    /// Remove expired flash messages (based on config duration)
+    pub fn prune_flash_messages(&mut self) {
+        if self.flash_messages.is_empty() {
+            return;
+        }
+
+        let now = Instant::now();
+        let duration_ms = self.config.general.flash_message_duration_ms;
+        self.flash_messages.retain(|msg| {
+            now.duration_since(msg.timestamp).as_millis() < duration_ms as u128
+        });
+    }
+
+    /// Clear all flash messages
+    pub fn clear_flash_messages(&mut self) {
+        self.flash_messages.clear();
     }
 
     /// Get the currently visible clip IDs (either search results or all history)
@@ -833,6 +871,17 @@ impl App {
             KeyCode::Char('P') => {
                 self.toggle_pinned_filter();
             }
+            KeyCode::Char('c') => {
+                self.clear_flash_messages();
+            }
+            KeyCode::Char('L') => {
+                // Test flash messages at different levels (capital L)
+                log::trace!("Test trace message");
+                log::debug!("Test debug message");
+                log::info!("Test info message");
+                log::warn!("Test warning message");
+                log::error!("Test error message");
+            }
             KeyCode::Char('/') => {
                 self.enter_search_mode();
             }
@@ -1179,6 +1228,7 @@ impl App {
             selected_entry,
             cached_image,
             self.config.general.show_preview_metadata,
+            &self.flash_messages,
             &self.theme,
         );
 

@@ -5,6 +5,7 @@ use ratatui_image::StatefulImage;
 use ratatui_image::protocol::StatefulProtocol;
 
 use super::Theme;
+use crate::logging::FlashMessage;
 use crate::models::{ClipContent, ClipEntry};
 
 /// Render preview panel with content at top and metadata at bottom
@@ -14,6 +15,7 @@ pub fn render_preview(
     entry: Option<&ClipEntry>,
     cached_image: Option<&mut StatefulProtocol>,
     show_metadata: bool,
+    flash_messages: &[FlashMessage],
     theme: &Theme,
 ) {
     if let Some(entry) = entry {
@@ -179,5 +181,46 @@ pub fn render_preview(
         let msg =
             Paragraph::new("No selection").style(theme.preview_metadata_label.bg(theme.preview_bg));
         frame.render_widget(msg, area);
+    }
+
+    // Overlay flash messages at bottom of preview area if present
+    if !flash_messages.is_empty() {
+        render_flash_messages_overlay(frame, area, flash_messages, theme);
+    }
+}
+
+/// Render flash messages as an overlay at the bottom of the preview area
+fn render_flash_messages_overlay(
+    frame: &mut Frame,
+    area: Rect,
+    messages: &[FlashMessage],
+    theme: &Theme,
+) {
+    let message_count = messages.len();
+    let lines_needed = message_count.min(area.height as usize);
+
+    // Bottom-aligned: start from bottom of area
+    let start_y = area.y + area.height.saturating_sub(lines_needed as u16);
+
+    for (i, msg) in messages.iter().rev().take(lines_needed).enumerate() {
+        let style = match msg.level {
+            log::Level::Error => theme.flash_error.bg(theme.preview_bg),
+            log::Level::Warn => theme.flash_warn.bg(theme.preview_bg),
+            log::Level::Info => theme.flash_info.bg(theme.preview_bg),
+            log::Level::Debug => theme.flash_debug.bg(theme.preview_bg),
+            log::Level::Trace => theme.flash_trace.bg(theme.preview_bg),
+        };
+
+        // Create paragraph with background to ensure readability over preview content
+        let line = Paragraph::new(msg.message.as_str()).style(style);
+
+        let line_area = Rect {
+            x: area.x,
+            y: start_y + i as u16,
+            width: area.width,
+            height: 1,
+        };
+
+        frame.render_widget(line, line_area);
     }
 }

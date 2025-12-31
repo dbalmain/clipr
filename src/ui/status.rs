@@ -10,6 +10,7 @@ const NORMAL_HINTS: &[(&[&str], &str)] = &[
     (&["'", "\""], "filter"),
     (&["m"], "mark"),
     (&["p"], "pin"),
+    (&["c"], "clear flash"),
     (&["d"], "delete"),
     (&["D"], "clear all"),
     (&["Enter"], "copy"),

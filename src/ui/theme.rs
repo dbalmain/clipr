@@ -110,6 +110,13 @@ pub struct Theme {
     pub divider_compact: Option<String>,
     pub divider_comfortable: Option<String>,
     pub divider_style: Style,
+
+    // === Flash Messages ===
+    pub flash_error: Style,
+    pub flash_warn: Style,
+    pub flash_info: Style,
+    pub flash_debug: Style,
+    pub flash_trace: Style,
 }
 
 impl Default for Theme {
@@ -214,6 +221,17 @@ impl Theme {
             divider_compact: Some("│".to_string()),
             divider_comfortable: None,
             divider_style: Style::default().fg(Color::Rgb(108, 112, 134)),
+
+            // Flash messages
+            flash_error: Style::default()
+                .fg(Color::Rgb(243, 139, 168))
+                .add_modifier(Modifier::BOLD),
+            flash_warn: Style::default().fg(Color::Rgb(249, 226, 175)),
+            flash_info: Style::default().fg(Color::Rgb(137, 180, 250)),
+            flash_debug: Style::default().fg(Color::Rgb(166, 173, 200)),
+            flash_trace: Style::default()
+                .fg(Color::Rgb(108, 112, 134))
+                .add_modifier(Modifier::DIM),
         }
     }
 
@@ -299,6 +317,17 @@ impl Theme {
             divider_compact: Some("│".to_string()),
             divider_comfortable: None,
             divider_style: Style::default().fg(Color::Rgb(156, 160, 176)),
+
+            // Flash messages
+            flash_error: Style::default()
+                .fg(Color::Rgb(210, 15, 57))
+                .add_modifier(Modifier::BOLD),
+            flash_warn: Style::default().fg(Color::Rgb(223, 142, 29)),
+            flash_info: Style::default().fg(Color::Rgb(30, 102, 245)),
+            flash_debug: Style::default().fg(Color::Rgb(108, 111, 133)),
+            flash_trace: Style::default()
+                .fg(Color::Rgb(156, 160, 176))
+                .add_modifier(Modifier::DIM),
         }
     }
 
@@ -386,6 +415,17 @@ impl Theme {
             divider_compact: Some("│".to_string()),
             divider_comfortable: None,
             divider_style: Style::default().fg(Color::Rgb(68, 75, 106)),
+
+            // Flash messages
+            flash_error: Style::default()
+                .fg(Color::Rgb(247, 118, 142))
+                .add_modifier(Modifier::BOLD),
+            flash_warn: Style::default().fg(Color::Rgb(224, 175, 104)),
+            flash_info: Style::default().fg(Color::Rgb(125, 207, 255)),
+            flash_debug: Style::default().fg(Color::Rgb(169, 177, 214)),
+            flash_trace: Style::default()
+                .fg(Color::Rgb(68, 75, 106))
+                .add_modifier(Modifier::DIM),
         }
     }
 
@@ -472,6 +512,17 @@ impl Theme {
             divider_compact: Some("│".to_string()),
             divider_comfortable: None,
             divider_style: Style::default().fg(Color::Rgb(68, 75, 106)),
+
+            // Flash messages
+            flash_error: Style::default()
+                .fg(Color::Rgb(247, 118, 142))
+                .add_modifier(Modifier::BOLD),
+            flash_warn: Style::default().fg(Color::Rgb(224, 175, 104)),
+            flash_info: Style::default().fg(Color::Rgb(125, 207, 255)),
+            flash_debug: Style::default().fg(Color::Rgb(169, 177, 214)),
+            flash_trace: Style::default()
+                .fg(Color::Rgb(68, 75, 106))
+                .add_modifier(Modifier::DIM),
         }
     }
 
@@ -557,6 +608,17 @@ impl Theme {
             divider_compact: Some("│".to_string()),
             divider_comfortable: None,
             divider_style: Style::default().fg(Color::Rgb(165, 173, 203)),
+
+            // Flash messages
+            flash_error: Style::default()
+                .fg(Color::Rgb(186, 33, 66))
+                .add_modifier(Modifier::BOLD),
+            flash_warn: Style::default().fg(Color::Rgb(150, 80, 0)),
+            flash_info: Style::default().fg(Color::Rgb(34, 94, 168)),
+            flash_debug: Style::default().fg(Color::Rgb(78, 89, 131)),
+            flash_trace: Style::default()
+                .fg(Color::Rgb(165, 173, 203))
+                .add_modifier(Modifier::DIM),
         }
     }
 
@@ -690,6 +752,11 @@ impl Theme {
                 "confirm_text" => theme.confirm_text = style,
                 "confirm_key" => theme.confirm_key = style,
                 "divider_style" => theme.divider_style = style,
+                "flash_error" => theme.flash_error = style,
+                "flash_warn" => theme.flash_warn = style,
+                "flash_info" => theme.flash_info = style,
+                "flash_debug" => theme.flash_debug = style,
+                "flash_trace" => theme.flash_trace = style,
                 _ => {} // Ignore unknown elements
             }
         }
@@ -892,6 +959,11 @@ impl Theme {
             "divider_style = {}\n",
             fmt_style(self.divider_style)
         ));
+        output.push_str(&format!("flash_error = {}\n", fmt_style(self.flash_error)));
+        output.push_str(&format!("flash_warn = {}\n", fmt_style(self.flash_warn)));
+        output.push_str(&format!("flash_info = {}\n", fmt_style(self.flash_info)));
+        output.push_str(&format!("flash_debug = {}\n", fmt_style(self.flash_debug)));
+        output.push_str(&format!("flash_trace = {}\n", fmt_style(self.flash_trace)));
 
         output
     }

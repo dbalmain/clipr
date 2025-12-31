@@ -54,6 +54,7 @@ const HELP_SECTIONS: &[HelpSection] = &[
                 "Assign to temporary register (like vim marks)",
             ),
             (&["p"], "Toggle pin"),
+            (&["c"], "Clear flash messages"),
             (&["d"], "Delete entry"),
             (&["D"], "Clear all unpinned (with confirmation)"),
             (&["q", "Esc"], "Quit"),

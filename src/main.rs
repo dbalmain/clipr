@@ -76,10 +76,25 @@ enum Commands {
 }
 
 fn main() -> Result<()> {
-    // Initialize logging
-    env_logger::init();
-
     let cli = Cli::parse();
+
+    // Initialize logging based on command type
+    // TUI mode initializes its own logger with flash channel
+    if cli.command.is_some() {
+        // CLI/daemon commands: initialize logger without flash channel
+        let (data_dir, config_dir) = ensure_directories()?;
+
+        // Load config to get log levels
+        let config_storage = TomlConfigStorage::new(config_dir.join("clipr.toml"));
+        let config = config_storage.load()?;
+
+        clipr::logging::init_logger(
+            data_dir.join("clipr.log"),
+            None, // No flash channel for CLI/daemon
+            &config.general.file_log_level,
+            &config.general.flash_message_level,
+        )?;
+    }
 
     match cli.command {
         Some(Commands::Listen) => cmd_listen(),
@@ -91,7 +106,7 @@ fn main() -> Result<()> {
         Some(Commands::GrabTempRegister { register, stdout }) => cmd_grab_temp_register(register, stdout),
         Some(Commands::GrabPermRegister { register, stdout }) => cmd_grab_perm_register(register, stdout),
         None => {
-            // Default: launch TUI
+            // Default: launch TUI (initializes its own logger with flash channel)
             cmd_tui()
         }
     }
@@ -282,6 +297,15 @@ fn cmd_tui() -> Result<()> {
     let config_storage = TomlConfigStorage::new(config_dir.join("clipr.toml"));
     let config = config_storage.load()?;
 
+    // Create flash message channel for TUI mode and re-initialize logger
+    let (flash_tx, flash_rx) = std::sync::mpsc::channel();
+    clipr::logging::init_logger(
+        data_dir.join("clipr.log"),
+        Some(flash_tx),
+        &config.general.file_log_level,
+        &config.general.flash_message_level,
+    )?;
+
     // Load history
     let history_path = data_dir.join("history.bin");
     let history_storage =
@@ -306,7 +330,7 @@ fn cmd_tui() -> Result<()> {
     let image_protocol = clipr::image::create_image_protocol();
 
     // Create app
-    let mut app = App::new(history, registers, config, backend, image_protocol)?;
+    let mut app = App::new(history, registers, config, backend, image_protocol, Some(flash_rx))?;
 
     // Setup terminal
     enable_raw_mode()?;
@@ -374,6 +398,10 @@ fn run_tui<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
 
         // Check for theme file changes (development mode)
         app.check_theme_reload();
+
+        // Poll and prune flash messages
+        app.poll_flash_messages();
+        app.prune_flash_messages();
 
         // Render
         terminal.draw(|f| app.draw(f))?;
