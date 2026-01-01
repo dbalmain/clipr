@@ -131,8 +131,7 @@ pub fn init_logger(
 
     // Set as global logger
     let max_level = file_level.max(flash_level);
-    log::set_boxed_logger(Box::new(logger))
-        .context("Failed to set global logger")?;
+    log::set_boxed_logger(Box::new(logger)).context("Failed to set global logger")?;
     log::set_max_level(max_level);
 
     Ok(())

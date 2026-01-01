@@ -10,11 +10,8 @@ const NORMAL_HINTS: &[(&[&str], &str)] = &[
     (&["'", "\""], "filter"),
     (&["m"], "mark"),
     (&["p"], "pin"),
-    (&["c"], "clear flash"),
     (&["d"], "delete"),
-    (&["D"], "clear all"),
     (&["Enter"], "copy"),
-    (&["Ctrl-Spc"], "paste"),
     (&["?"], "help"),
 ];
 
@@ -29,7 +26,11 @@ const REGISTER_ASSIGN_HINTS: &[(&[&str], &str)] = &[(&["Esc"], "cancel")];
 
 const CONFIRM_HINTS: &[(&[&str], &str)] = &[(&["y"], "confirm"), (&["n", "Esc"], "cancel")];
 
-const HELP_HINTS: &[(&[&str], &str)] = &[(&["ESC"], "press any key to close help")];
+const HELP_HINTS: &[(&[&str], &str)] = &[
+    (&["j", "k"], "scroll"),
+    (&["PgDn", "PgUp"], "page"),
+    (&["?", "Esc"], "close"),
+];
 
 const NUMERIC_HINTS: &[(&[&str], &str)] = &[
     (&["j", "k"], "move"),

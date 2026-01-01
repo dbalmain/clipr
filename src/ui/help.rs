@@ -5,6 +5,9 @@ use unicode_width::UnicodeWidthStr;
 use super::Theme;
 use super::layout::centered_rect;
 
+/// Height reserved for help modal padding (2px top + 2px bottom)
+const HELP_MODAL_PADDING: u16 = 4;
+
 struct HelpSection {
     title: &'static str,
     items: &'static [(&'static [&'static str], &'static str)],
@@ -123,7 +126,13 @@ fn add_help_content<'a>(content: &mut Vec<Line<'a>>, section: &HelpSection, them
 }
 
 /// Render help overlay with keybindings
-pub fn render_help_overlay(frame: &mut Frame, area: Rect, theme: &Theme) {
+/// Returns (clamped_scroll, max_scroll) to prevent scroll from going out of bounds
+pub fn render_help_overlay(
+    frame: &mut Frame,
+    area: Rect,
+    theme: &Theme,
+    scroll: usize,
+) -> (usize, usize) {
     let overlay_area = centered_rect(60, 80, area);
 
     // Clear the background area first to hide underlying content
@@ -141,11 +150,21 @@ pub fn render_help_overlay(frame: &mut Frame, area: Rect, theme: &Theme) {
         add_help_content(&mut content, section, theme);
     }
 
-    // Add footer
+    // Calculate available height and determine if scrolling is needed
+    let available_height = overlay_area.height.saturating_sub(HELP_MODAL_PADDING) as usize;
+
+    // Build footer with scroll indicators (BEFORE calculating max_scroll)
+    let footer_text = "Press ?/Esc to close";
+
     content.push(Line::from(vec![Span::styled(
-        "Press any key to close...",
+        footer_text,
         theme.help_footer,
     )]));
+
+    // Now calculate max_scroll with footer included
+    let total_lines = content.len();
+    let max_scroll = total_lines.saturating_sub(available_height);
+    let clamped_scroll = scroll.min(max_scroll);
 
     let paragraph = Paragraph::new(content)
         .block(
@@ -153,7 +172,11 @@ pub fn render_help_overlay(frame: &mut Frame, area: Rect, theme: &Theme) {
                 .style(Style::default().bg(theme.help_modal_bg))
                 .padding(ratatui::widgets::Padding::uniform(2)),
         )
+        .scroll((clamped_scroll as u16, 0))
         .wrap(Wrap { trim: false });
 
     frame.render_widget(paragraph, overlay_area);
+
+    // Return both clamped scroll and max scroll
+    (clamped_scroll, max_scroll)
 }

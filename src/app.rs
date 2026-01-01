@@ -150,6 +150,10 @@ pub struct App {
     /// Used to calculate half-page and full-page movements
     list_height: u16,
 
+    /// Scroll offset for clip list (top visible row index)
+    /// Used to implement scroll padding (keep context lines visible)
+    list_scroll_offset: usize,
+
     /// Theme picker state
     pub theme_picker_themes: Vec<String>,
     pub theme_picker_selected: usize,
@@ -166,6 +170,12 @@ pub struct App {
 
     /// Receiver for flash messages from logger
     flash_rx: Option<Receiver<FlashMessage>>,
+
+    /// Scroll offset for help modal (0 = top)
+    help_scroll: usize,
+
+    /// Maximum scroll value for help modal (updated each frame)
+    help_max_scroll: usize,
 }
 
 impl App {
@@ -296,6 +306,7 @@ impl App {
             view_mode,
             startup_error,
             list_height: 20, // Default, will be updated each frame
+            list_scroll_offset: 0,
             theme_picker_themes: Vec::new(),
             theme_picker_selected: 0,
             current_theme_name,
@@ -303,6 +314,8 @@ impl App {
             paste_request: PasteRequest::None,
             flash_messages: Vec::new(),
             flash_rx,
+            help_scroll: 0,
+            help_max_scroll: 0,
         })
     }
 
@@ -323,9 +336,8 @@ impl App {
 
         let now = Instant::now();
         let duration_ms = self.config.general.flash_message_duration_ms;
-        self.flash_messages.retain(|msg| {
-            now.duration_since(msg.timestamp).as_millis() < duration_ms as u128
-        });
+        self.flash_messages
+            .retain(|msg| now.duration_since(msg.timestamp).as_millis() < duration_ms as u128);
     }
 
     /// Clear all flash messages
@@ -388,25 +400,70 @@ impl App {
     }
 
     /// Calculate the number of entries for a half-page movement
-    /// Takes into account the view mode (Comfortable uses 2 rows per entry)
+    /// Takes into account the view mode (Comfortable uses 3 rows per entry)
     fn half_page_size(&self) -> usize {
         let rows_per_entry = match self.view_mode {
             ViewMode::Compact => 1,
-            ViewMode::Comfortable => 2,
+            ViewMode::Comfortable => 3,
         };
         let visible_entries = (self.list_height as usize) / rows_per_entry;
         (visible_entries / 2).max(1) // At least 1
     }
 
     /// Calculate the number of entries for a full-page movement
-    /// Takes into account the view mode (Comfortable uses 2 rows per entry)
+    /// Takes into account the view mode (Comfortable uses 3 rows per entry)
     fn full_page_size(&self) -> usize {
         let rows_per_entry = match self.view_mode {
             ViewMode::Compact => 1,
-            ViewMode::Comfortable => 2,
+            ViewMode::Comfortable => 3,
         };
         let visible_entries = (self.list_height as usize) / rows_per_entry;
         visible_entries.max(1) // At least 1
+    }
+
+    /// Update scroll offset to keep selected item visible with scroll padding
+    /// Maintains 3 rows of context above/below selection (vim-style)
+    fn update_scroll_offset(&mut self, total_visible_rows: usize) {
+        const SCROLL_PADDING: usize = 3;
+
+        let rows_per_entry = match self.view_mode {
+            ViewMode::Compact => 1,
+            ViewMode::Comfortable => 3, // Each entry takes 3 rows
+        };
+
+        // Calculate the row index of the selected item
+        let selected_row = self.selected_index * rows_per_entry;
+
+        // Calculate visible height in rows
+        let visible_rows = self.list_height as usize;
+        if visible_rows == 0 {
+            return;
+        }
+
+        // Calculate the bottom visible row (exclusive)
+        let scroll_bottom = self.list_scroll_offset + visible_rows;
+
+        // Scroll down if selected item is too close to bottom. Add 1 to account for 2-row comfortable entries
+        if selected_row + SCROLL_PADDING + 1 >= scroll_bottom {
+            // Position the selected row SCROLL_PADDING rows from the bottom
+            let target_offset = selected_row + SCROLL_PADDING + 2;
+            if target_offset > visible_rows {
+                self.list_scroll_offset = target_offset - visible_rows;
+            }
+        }
+        // Scroll up if selected item is too close to top
+        else if selected_row < self.list_scroll_offset + SCROLL_PADDING {
+            // Position the selected row SCROLL_PADDING rows from the top
+            self.list_scroll_offset = selected_row.saturating_sub(SCROLL_PADDING);
+        }
+
+        // Clamp scroll offset to valid range
+        if total_visible_rows > visible_rows {
+            let max_offset = total_visible_rows - visible_rows;
+            self.list_scroll_offset = self.list_scroll_offset.min(max_offset);
+        } else {
+            self.list_scroll_offset = 0;
+        }
     }
 
     /// Request async loading of the currently selected image
@@ -664,7 +721,11 @@ impl App {
     pub fn toggle_help(&mut self) {
         self.mode = match self.mode {
             AppMode::Help => AppMode::Normal,
-            _ => AppMode::Help,
+            _ => {
+                self.help_scroll = 0; // Reset scroll when entering help
+                self.help_max_scroll = 0;
+                AppMode::Help
+            }
         };
     }
 
@@ -1000,9 +1061,52 @@ impl App {
     }
 
     /// Handle keys in help mode
-    fn handle_help_key(&mut self, _key: KeyEvent) -> Result<()> {
-        // Any key exits help
-        self.mode = AppMode::Normal;
+    fn handle_help_key(&mut self, key: KeyEvent) -> Result<()> {
+        const HELP_HALF_PAGE: usize = 5;
+        const HELP_FULL_PAGE: usize = 10;
+
+        match key.code {
+            // Line-by-line navigation with bounds checking
+            KeyCode::Char('j') | KeyCode::Down => {
+                if self.help_scroll < self.help_max_scroll {
+                    self.help_scroll += 1;
+                }
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                if self.help_scroll > 0 {
+                    self.help_scroll -= 1;
+                }
+            }
+            // Page navigation with clamping
+            KeyCode::PageDown => {
+                self.help_scroll = (self.help_scroll + HELP_FULL_PAGE).min(self.help_max_scroll);
+            }
+            KeyCode::PageUp => {
+                self.help_scroll = self.help_scroll.saturating_sub(HELP_FULL_PAGE);
+            }
+            // Half-page navigation with clamping
+            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                self.help_scroll = (self.help_scroll + HELP_HALF_PAGE).min(self.help_max_scroll);
+            }
+            KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                self.help_scroll = self.help_scroll.saturating_sub(HELP_HALF_PAGE);
+            }
+            // Jump to top/bottom
+            KeyCode::Home => {
+                self.help_scroll = 0;
+            }
+            KeyCode::End => {
+                self.help_scroll = self.help_max_scroll;
+            }
+            // Close help with '?' or Esc
+            KeyCode::Char('?') | KeyCode::Esc => {
+                self.mode = AppMode::Normal;
+            }
+            // Any other key also closes help (for backward compatibility)
+            _ => {
+                self.mode = AppMode::Normal;
+            }
+        }
         Ok(())
     }
 
@@ -1180,11 +1284,28 @@ impl App {
         let keyboard_hints_area = chunks[3];
 
         // Update list height for page movement calculations
-        // Subtract 1 for the header line that clip_list renders
-        self.list_height = clip_list_area.height.saturating_sub(1);
+        // Account for header height based on view mode
+        let header_height = match self.view_mode {
+            ViewMode::Comfortable => 4,
+            ViewMode::Compact => 1,
+        };
+        self.list_height = clip_list_area.height.saturating_sub(header_height);
 
-        // Get visible clips for rendering
+        // Get visible clip count for scroll calculation
         let visible_clip_ids = self.visible_clips();
+        let visible_count = visible_clip_ids.len();
+
+        // Calculate total rows needed for all entries
+        let rows_per_entry = match self.view_mode {
+            ViewMode::Compact => 1,
+            ViewMode::Comfortable => 3,
+        };
+        let total_visible_rows = visible_count * rows_per_entry;
+
+        // Update scroll offset to maintain padding (must happen before borrowing entries)
+        self.update_scroll_offset(total_visible_rows);
+
+        // Get visible entries for rendering (after scroll offset update)
         let visible_entries: Vec<&crate::models::ClipEntry> = visible_clip_ids
             .iter()
             .filter_map(|&id| self.history.get_entry(id))
@@ -1202,6 +1323,7 @@ impl App {
                 numeric_prefix: &self.numeric_prefix,
                 register_filter: self.register_filter,
                 view_mode: self.view_mode,
+                scroll_offset: self.list_scroll_offset,
                 theme: &self.theme,
             },
         );
@@ -1237,7 +1359,8 @@ impl App {
 
         // Render help overlay if in help mode
         if matches!(self.mode, AppMode::Help) {
-            ui::render_help_overlay(frame, size, &self.theme);
+            (self.help_scroll, self.help_max_scroll) =
+                ui::render_help_overlay(frame, size, &self.theme, self.help_scroll);
         }
 
         // Render theme picker if in theme picker mode

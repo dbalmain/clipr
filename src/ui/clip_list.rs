@@ -261,6 +261,7 @@ pub struct ClipListRenderContext<'a> {
     pub numeric_prefix: &'a str,
     pub register_filter: RegisterFilter,
     pub view_mode: ViewMode,
+    pub scroll_offset: usize,
     pub theme: &'a super::Theme,
 }
 
@@ -438,6 +439,7 @@ pub fn render_clip_list(
 
             let mut table_state = ratatui::widgets::TableState::default();
             table_state.select(Some(ctx.selected));
+            *table_state.offset_mut() = ctx.scroll_offset;
 
             frame.render_stateful_widget(table, list_area, &mut table_state);
         }
@@ -454,6 +456,7 @@ pub fn render_clip_list(
             // Each clip has 3 rows (preview, metadata, spacing)
             let mut table_state = ratatui::widgets::TableState::default();
             table_state.select(Some(ctx.selected * 3));
+            *table_state.offset_mut() = ctx.scroll_offset;
 
             frame.render_stateful_widget(table, list_area, &mut table_state);
         }

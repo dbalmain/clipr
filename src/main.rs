@@ -103,8 +103,12 @@ fn main() -> Result<()> {
         Some(Commands::Stats) => cmd_stats(),
         Some(Commands::History { limit }) => cmd_history(limit),
         Some(Commands::ExportTheme { theme_name }) => cmd_export_theme(&theme_name),
-        Some(Commands::GrabTempRegister { register, stdout }) => cmd_grab_temp_register(register, stdout),
-        Some(Commands::GrabPermRegister { register, stdout }) => cmd_grab_perm_register(register, stdout),
+        Some(Commands::GrabTempRegister { register, stdout }) => {
+            cmd_grab_temp_register(register, stdout)
+        }
+        Some(Commands::GrabPermRegister { register, stdout }) => {
+            cmd_grab_perm_register(register, stdout)
+        }
         None => {
             // Default: launch TUI (initializes its own logger with flash channel)
             cmd_tui()
@@ -330,7 +334,14 @@ fn cmd_tui() -> Result<()> {
     let image_protocol = clipr::image::create_image_protocol();
 
     // Create app
-    let mut app = App::new(history, registers, config, backend, image_protocol, Some(flash_rx))?;
+    let mut app = App::new(
+        history,
+        registers,
+        config,
+        backend,
+        image_protocol,
+        Some(flash_rx),
+    )?;
 
     // Setup terminal
     enable_raw_mode()?;
