@@ -44,3 +44,8 @@ coverage/
 
 # Benchmarks
 benches/target/
+
+# Specify/Planning
+.specify/
+specs/
+CLAUDE.md
