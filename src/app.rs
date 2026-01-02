@@ -793,9 +793,9 @@ impl App {
     /// Performs atomic swap: load → validate → apply only if valid
     /// On error, displays error modal and keeps previous theme
     pub fn reload_theme(&mut self) -> Result<()> {
-        log::info!("Reloading theme: {}", self.config.general.theme);
+        log::info!("Reloading theme: {}", self.current_theme_name);
 
-        match Theme::load(&self.config.general.theme) {
+        match Theme::load(&self.current_theme_name) {
             Ok(new_theme) => {
                 // Atomic swap - only replace if load succeeded
                 self.theme = new_theme;
@@ -808,7 +808,7 @@ impl App {
                 // Keep previous theme, show error modal
                 let error_msg = format!(
                     "Failed to reload theme '{}':\n{}",
-                    self.config.general.theme, e
+                    self.current_theme_name, e
                 );
                 log::error!("{}", error_msg);
                 self.startup_error = Some(error_msg);
