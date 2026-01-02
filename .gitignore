@@ -49,3 +49,5 @@ benches/target/
 .specify/
 specs/
 CLAUDE.md
+AGENTS.md
+.beads/

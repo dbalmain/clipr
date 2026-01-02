@@ -405,8 +405,20 @@ impl Theme {
 
     /// Tokyo Night Storm theme (darker blue)
     pub fn tokyonight_storm() -> Self {
-        let fg = Color::Rgb(192, 202, 245);
-        let bg = Color::Rgb(24, 27, 38);
+        let fg = Color::Rgb(168, 177, 219);
+        let bg = Color::Rgb(36, 40, 59);
+        let secondary_text = Color::Rgb(128, 137, 179);
+        let modal_bg = Color::Rgb(31, 35, 53);
+        let selection_bg = Color::Rgb(40, 46, 68);
+        let blue = Color::Rgb(61, 89, 161);
+        let cyan = Color::Rgb(42, 195, 222);
+        let teal = Color::Rgb(125, 207, 255);
+        let green = Color::Rgb(158, 206, 106);
+        let yellow = Color::Rgb(224, 175, 104);
+        let orange = Color::Rgb(255, 158, 100);
+        let purple = Color::Rgb(158, 124, 216);
+        let error_color = Color::Rgb(219, 75, 75);
+        let guide_lines = Color::Rgb(46, 52, 79);
 
         Theme {
             default_fg: fg,
@@ -415,80 +427,85 @@ impl Theme {
             clip_list_bg: bg,
             preview_bg: bg,
 
-            help_modal_bg: Color::Rgb(20, 22, 32),
-            error_modal_bg: Color::Rgb(20, 22, 32),
-            confirm_modal_bg: Color::Rgb(20, 22, 32),
+            help_modal_bg: modal_bg,
+            error_modal_bg: modal_bg,
+            confirm_modal_bg: modal_bg,
 
-            selection_bg: Color::Rgb(36, 40, 59),
-            status_bar_bg: Color::Rgb(36, 40, 59),
+            selection_bg,
+            status_bar_bg: bg,
             search_bg: bg,
-            search_focused_bg: Color::Rgb(49, 50, 68),
+            search_focused_bg: modal_bg,
 
-            selection_indicator_compact: None,
-            selection_indicator_comfortable: None,
-            selection_indicator_repeats_comfortable: false,
-            selection_indicator_style: Style::default().fg(Color::Rgb(125, 207, 255)),
-            pin_indicator: DEFAULT_PIN_INDICATOR.to_string(),
-            pin_indicator_style: Style::default().fg(Color::Rgb(224, 175, 104)),
+            selection_indicator_compact: Some("│".to_string()),
+            selection_indicator_comfortable: Some("│".to_string()),
+            selection_indicator_repeats_comfortable: true,
+            selection_indicator_style: Style::default().fg(cyan),
+            pin_indicator: "".to_string(),
+            pin_indicator_style: Style::default().fg(yellow),
 
             clip_number: Style::default()
-                .fg(Color::Rgb(187, 154, 247))
-                .add_modifier(Modifier::BOLD),
+                .fg(secondary_text)
+                .add_modifier(Modifier::DIM),
             clip_text: Style::default().fg(fg),
             clip_text_selected: Style::default()
-                .fg(Color::Rgb(125, 207, 255))
+                .fg(teal)
                 .add_modifier(Modifier::BOLD),
-            temp_register: Style::default().fg(Color::Rgb(125, 207, 255)),
-            perm_register: Style::default().fg(Color::Rgb(187, 154, 247)),
-            timestamp: Style::default().fg(Color::Rgb(169, 177, 214)),
-            clip_list_header: Style::default().fg(Color::Rgb(169, 177, 214)),
-            clip_list_item_count: Style::default()
-                .fg(Color::Rgb(169, 177, 214))
-                .add_modifier(Modifier::DIM),
+            temp_register: Style::default().fg(orange),
+            perm_register: Style::default().fg(green),
+            timestamp: Style::default().fg(secondary_text),
+            clip_list_header: Style::default()
+                .fg(secondary_text)
+                .add_modifier(Modifier::BOLD),
+            clip_list_item_count: Style::default().fg(blue),
 
             preview_text: Style::default().fg(fg),
-            preview_metadata_label: Style::default().fg(Color::Rgb(169, 177, 214)),
+            preview_metadata_label: Style::default().fg(secondary_text),
             preview_metadata_value: Style::default().fg(fg),
 
-            status_key: Style::default().add_modifier(Modifier::BOLD),
-            status_desc: Style::default().fg(Color::Rgb(169, 177, 214)),
+            status_key: Style::default()
+                .fg(purple)
+                .add_modifier(Modifier::BOLD),
+            status_desc: Style::default().fg(secondary_text),
 
-            search_input: Style::default().fg(Color::Rgb(224, 175, 104)),
+            search_input: Style::default().fg(green),
 
             help_title: Style::default()
-                .fg(Color::Rgb(125, 207, 255))
+                .fg(purple)
                 .add_modifier(Modifier::BOLD),
             help_header: Style::default()
-                .fg(Color::Rgb(125, 207, 255))
+                .fg(yellow)
                 .add_modifier(Modifier::BOLD),
-
             help_key: Style::default()
-                .fg(Color::Rgb(224, 175, 104))
+                .fg(green)
                 .add_modifier(Modifier::BOLD),
             help_desc: Style::default().fg(fg),
-            help_footer: Style::default().fg(Color::Rgb(169, 177, 214)),
+            help_footer: Style::default()
+                .fg(secondary_text)
+                .add_modifier(Modifier::DIM),
 
             error_text: Style::default().fg(fg),
-            error_border: Style::default().fg(Color::Rgb(247, 118, 142)),
+            error_border: Style::default().fg(error_color),
 
             confirm_text: Style::default().fg(fg),
             confirm_key: Style::default()
-                .fg(Color::Rgb(125, 207, 255))
+                .fg(cyan)
                 .add_modifier(Modifier::BOLD),
 
             divider_compact: Some("│".to_string()),
-            divider_comfortable: None,
-            divider_style: Style::default().fg(Color::Rgb(68, 75, 106)),
+            divider_comfortable: Some(" │".to_string()),
+            divider_style: Style::default()
+                .fg(guide_lines)
+                .add_modifier(Modifier::DIM),
 
             // Flash messages
             flash_error: Style::default()
-                .fg(Color::Rgb(247, 118, 142))
+                .fg(error_color)
                 .add_modifier(Modifier::BOLD),
-            flash_warn: Style::default().fg(Color::Rgb(224, 175, 104)),
-            flash_info: Style::default().fg(Color::Rgb(125, 207, 255)),
-            flash_debug: Style::default().fg(Color::Rgb(169, 177, 214)),
+            flash_warn: Style::default().fg(yellow),
+            flash_info: Style::default().fg(teal),
+            flash_debug: Style::default().fg(secondary_text),
             flash_trace: Style::default()
-                .fg(Color::Rgb(68, 75, 106))
+                .fg(guide_lines)
                 .add_modifier(Modifier::DIM),
         }
     }
@@ -582,8 +599,27 @@ impl Theme {
         }
     }
 
-    /// Load theme by name (custom overrides built-in)
+    /// Load theme by name
+    /// - If name starts with '#', force load built-in theme (e.g., "#tokyonight-storm")
+    /// - Otherwise, try custom theme first, then fall back to built-in
     pub fn load(name: &str) -> Result<Self> {
+        // Check if name explicitly requests built-in theme with '#' prefix
+        if let Some(builtin_name) = name.strip_prefix('#') {
+            // Force load built-in theme
+            if let Some(built_in) = BuiltInTheme::from_name(builtin_name) {
+                return Ok(built_in.to_theme());
+            }
+            return Err(anyhow!(
+                "Unknown built-in theme '{}'. Available built-in themes: {}",
+                builtin_name,
+                BuiltInTheme::all()
+                    .iter()
+                    .map(|t| format!("#{}", t.name()))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+
         // Try loading custom theme from file first (custom themes override built-in)
         let config_dir = get_config_dir()?;
         let theme_path = config_dir.join("themes").join(format!("{}.toml", name));
@@ -599,13 +635,8 @@ impl Theme {
 
         // Theme not found
         Err(anyhow!(
-            "Unknown theme '{}'. Available built-in themes: {}",
-            name,
-            BuiltInTheme::all()
-                .iter()
-                .map(|t| t.name())
-                .collect::<Vec<_>>()
-                .join(", ")
+            "Unknown theme '{}'. Use '#' prefix for built-in themes.",
+            name
         ))
     }
 
@@ -906,13 +937,15 @@ impl Theme {
         output
     }
 
-    /// Get all available theme names (built-in + custom from filesystem)
+    /// Get all available theme names (built-in prefixed with '#', custom without)
+    /// Built-in themes are prefixed with '#' to distinguish them from custom themes.
+    /// If a custom theme has the same name as a built-in, both will be listed.
     pub fn get_all_theme_names() -> Vec<String> {
         let mut themes = Vec::new();
 
-        // Add all built-in themes
+        // Add all built-in themes with '#' prefix
         for builtin in BuiltInTheme::all() {
-            themes.push(builtin.name().to_string());
+            themes.push(format!("#{}", builtin.name()));
         }
 
         // Add custom themes from ~/.config/clipr/themes/
@@ -926,10 +959,7 @@ impl Theme {
                         && name.ends_with(".toml")
                     {
                         let theme_name = name.trim_end_matches(".toml");
-                        // Only add if not already in built-in list
-                        if !themes.contains(&theme_name.to_string()) {
-                            themes.push(theme_name.to_string());
-                        }
+                        themes.push(theme_name.to_string());
                     }
                 }
             }
