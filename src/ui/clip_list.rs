@@ -331,44 +331,59 @@ pub fn render_clip_list(
         (header, style)
     };
 
-    // Build header lines based on view mode
-    let header_lines = match ctx.view_mode {
-        ViewMode::Comfortable => {
-            // Comfortable: title, empty, count, empty (each on separate lines)
-            vec![
-                Line::from(Span::styled(header_left, header_style)),
-                Line::from(""),
-                Line::from(Span::styled(count_text, ctx.theme.clip_list_item_count)),
-                Line::from(""),
-            ]
-        }
-        ViewMode::Compact => {
-            // Compact: title and count on same line (right-aligned)
-            let available_width = header_area.width as usize;
-            let left_width = header_left.len();
-            let right_width = count_text.len();
-            let padding = if left_width + right_width < available_width {
-                available_width - left_width - right_width
-            } else {
-                1
-            };
-
-            vec![Line::from(vec![
-                Span::styled(header_left, header_style),
-                Span::raw(" ".repeat(padding)),
-                Span::styled(count_text, ctx.theme.clip_list_item_count),
-            ])]
-        }
-    };
-
-    // Use search_focused_bg when in search mode, otherwise clip_list_bg
-    let header_bg = if matches!(ctx.mode, AppMode::Search) {
+    // Determine background for search/title text (focused when in search mode)
+    let search_line_bg = if matches!(ctx.mode, AppMode::Search) {
         ctx.theme.search_focused_bg
     } else {
         ctx.theme.clip_list_bg
     };
-    let header_para = Paragraph::new(header_lines).style(Style::default().bg(header_bg));
-    frame.render_widget(header_para, header_area);
+
+    // Render header based on view mode using separate paragraphs
+    match ctx.view_mode {
+        ViewMode::Comfortable => {
+            // Split header into 4 lines: search, empty, count, empty
+            let header_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(1), // Search/title line
+                    Constraint::Length(1), // Empty
+                    Constraint::Length(1), // Count line
+                    Constraint::Length(1), // Empty
+                ])
+                .split(header_area);
+
+            // Render search/title line with focused background
+            let search_para = Paragraph::new(Line::from(Span::styled(header_left, header_style)))
+                .style(Style::default().bg(search_line_bg));
+            frame.render_widget(search_para, header_chunks[0]);
+
+            // Render count line with normal background
+            let count_para = Paragraph::new(Line::from(Span::styled(count_text, ctx.theme.clip_list_item_count)))
+                .style(Style::default().bg(ctx.theme.clip_list_bg));
+            frame.render_widget(count_para, header_chunks[2]);
+        }
+        ViewMode::Compact => {
+            // Split header horizontally: search on left, 1-space gap, count on right
+            let header_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Min(1),                          // Search/title (takes remaining space)
+                    Constraint::Length(1),                       // 1-space gap
+                    Constraint::Length(count_text.len() as u16), // Count (fixed width)
+                ])
+                .split(header_area);
+
+            // Render search/title with focused background
+            let search_para = Paragraph::new(Line::from(Span::styled(header_left, header_style)))
+                .style(Style::default().bg(search_line_bg));
+            frame.render_widget(search_para, header_chunks[0]);
+
+            // Render count with normal background
+            let count_para = Paragraph::new(Line::from(Span::styled(count_text, ctx.theme.clip_list_item_count)))
+                .style(Style::default().bg(ctx.theme.clip_list_bg));
+            frame.render_widget(count_para, header_chunks[2]);
+        }
+    }
 
     // Render based on view mode
     let available_width = list_area.width as usize;

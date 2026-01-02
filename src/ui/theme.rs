@@ -76,8 +76,6 @@ pub struct Theme {
 
     // === Preview Panel ===
     pub preview_text: Style,
-    pub preview_loading: Style,
-    pub preview_file_label: Style,
     pub preview_metadata_label: Style,
     pub preview_metadata_value: Style,
 
@@ -87,8 +85,6 @@ pub struct Theme {
 
     // === Search Input ===
     pub search_input: Style,
-    pub search_border: Style,
-    pub search_title: Style,
 
     // === Help Modal ===
     pub help_title: Style,
@@ -98,7 +94,6 @@ pub struct Theme {
     pub help_footer: Style,
 
     // === Error Modal ===
-    pub error_title: Style,
     pub error_text: Style,
     pub error_border: Style,
 
@@ -177,8 +172,6 @@ impl Theme {
 
             // Preview
             preview_text: Style::default().fg(fg),
-            preview_loading: Style::default().fg(Color::Rgb(166, 173, 200)),
-            preview_file_label: Style::default().fg(Color::Rgb(166, 173, 200)),
             preview_metadata_label: Style::default().fg(Color::Rgb(166, 173, 200)),
             preview_metadata_value: Style::default().fg(fg),
 
@@ -188,8 +181,6 @@ impl Theme {
 
             // Search
             search_input: Style::default().fg(Color::Rgb(249, 226, 175)),
-            search_border: Style::default().fg(fg),
-            search_title: Style::default().fg(fg),
 
             // Help modal
             help_title: Style::default()
@@ -205,9 +196,6 @@ impl Theme {
             help_footer: Style::default().fg(Color::Rgb(166, 173, 200)),
 
             // Error modal
-            error_title: Style::default()
-                .fg(Color::Rgb(243, 139, 168))
-                .add_modifier(Modifier::BOLD),
             error_text: Style::default().fg(fg),
             error_border: Style::default().fg(Color::Rgb(243, 139, 168)),
 
@@ -279,8 +267,6 @@ impl Theme {
                 .add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
-            preview_loading: Style::default().fg(Color::Rgb(108, 111, 133)),
-            preview_file_label: Style::default().fg(Color::Rgb(108, 111, 133)),
             preview_metadata_label: Style::default().fg(Color::Rgb(108, 111, 133)),
             preview_metadata_value: Style::default().fg(fg),
 
@@ -288,8 +274,6 @@ impl Theme {
             status_desc: Style::default().fg(Color::Rgb(108, 111, 133)),
 
             search_input: Style::default().fg(Color::Rgb(223, 142, 29)),
-            search_border: Style::default().fg(fg),
-            search_title: Style::default().fg(fg),
 
             help_title: Style::default()
                 .fg(Color::Rgb(30, 102, 245))
@@ -303,9 +287,6 @@ impl Theme {
             help_desc: Style::default().fg(fg),
             help_footer: Style::default().fg(Color::Rgb(108, 111, 133)),
 
-            error_title: Style::default()
-                .fg(Color::Rgb(210, 15, 57))
-                .add_modifier(Modifier::BOLD),
             error_text: Style::default().fg(fg),
             error_border: Style::default().fg(Color::Rgb(210, 15, 57)),
 
@@ -376,8 +357,6 @@ impl Theme {
                 .add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
-            preview_loading: Style::default().fg(Color::Rgb(169, 177, 214)),
-            preview_file_label: Style::default().fg(Color::Rgb(169, 177, 214)),
             preview_metadata_label: Style::default().fg(Color::Rgb(169, 177, 214)),
             preview_metadata_value: Style::default().fg(fg),
 
@@ -385,8 +364,6 @@ impl Theme {
             status_desc: Style::default().fg(Color::Rgb(169, 177, 214)),
 
             search_input: Style::default().fg(Color::Rgb(224, 175, 104)),
-            search_border: Style::default().fg(fg),
-            search_title: Style::default().fg(fg),
 
             help_title: Style::default()
                 .fg(Color::Rgb(125, 207, 255))
@@ -401,9 +378,6 @@ impl Theme {
             help_desc: Style::default().fg(fg),
             help_footer: Style::default().fg(Color::Rgb(169, 177, 214)),
 
-            error_title: Style::default()
-                .fg(Color::Rgb(247, 118, 142))
-                .add_modifier(Modifier::BOLD),
             error_text: Style::default().fg(fg),
             error_border: Style::default().fg(Color::Rgb(247, 118, 142)),
 
@@ -473,8 +447,6 @@ impl Theme {
                 .add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
-            preview_loading: Style::default().fg(Color::Rgb(169, 177, 214)),
-            preview_file_label: Style::default().fg(Color::Rgb(169, 177, 214)),
             preview_metadata_label: Style::default().fg(Color::Rgb(169, 177, 214)),
             preview_metadata_value: Style::default().fg(fg),
 
@@ -482,8 +454,6 @@ impl Theme {
             status_desc: Style::default().fg(Color::Rgb(169, 177, 214)),
 
             search_input: Style::default().fg(Color::Rgb(224, 175, 104)),
-            search_border: Style::default().fg(fg),
-            search_title: Style::default().fg(fg),
 
             help_title: Style::default()
                 .fg(Color::Rgb(125, 207, 255))
@@ -498,9 +468,6 @@ impl Theme {
             help_desc: Style::default().fg(fg),
             help_footer: Style::default().fg(Color::Rgb(169, 177, 214)),
 
-            error_title: Style::default()
-                .fg(Color::Rgb(247, 118, 142))
-                .add_modifier(Modifier::BOLD),
             error_text: Style::default().fg(fg),
             error_border: Style::default().fg(Color::Rgb(247, 118, 142)),
 
@@ -570,8 +537,6 @@ impl Theme {
                 .add_modifier(Modifier::DIM),
 
             preview_text: Style::default().fg(fg),
-            preview_loading: Style::default().fg(Color::Rgb(78, 89, 131)),
-            preview_file_label: Style::default().fg(Color::Rgb(78, 89, 131)),
             preview_metadata_label: Style::default().fg(Color::Rgb(78, 89, 131)),
             preview_metadata_value: Style::default().fg(fg),
 
@@ -579,8 +544,6 @@ impl Theme {
             status_desc: Style::default().fg(Color::Rgb(78, 89, 131)),
 
             search_input: Style::default().fg(Color::Rgb(150, 80, 0)),
-            search_border: Style::default().fg(fg),
-            search_title: Style::default().fg(fg),
 
             help_title: Style::default()
                 .fg(Color::Rgb(34, 94, 168))
@@ -594,9 +557,6 @@ impl Theme {
             help_desc: Style::default().fg(fg),
             help_footer: Style::default().fg(Color::Rgb(78, 89, 131)),
 
-            error_title: Style::default()
-                .fg(Color::Rgb(186, 33, 66))
-                .add_modifier(Modifier::BOLD),
             error_text: Style::default().fg(fg),
             error_border: Style::default().fg(Color::Rgb(186, 33, 66)),
 
@@ -731,22 +691,17 @@ impl Theme {
                 "clip_list_header" => theme.clip_list_header = style,
                 "clip_list_item_count" => theme.clip_list_item_count = style,
                 "preview_text" => theme.preview_text = style,
-                "preview_loading" => theme.preview_loading = style,
-                "preview_file_label" => theme.preview_file_label = style,
                 "preview_metadata_label" => theme.preview_metadata_label = style,
                 "preview_metadata_value" => theme.preview_metadata_value = style,
                 "status_key" => theme.status_key = style,
                 "status_desc" => theme.status_desc = style,
                 "search_input" => theme.search_input = style,
-                "search_border" => theme.search_border = style,
-                "search_title" => theme.search_title = style,
                 "help_title" => theme.help_title = style,
                 "help_header" => theme.help_header = style,
 
                 "help_key" => theme.help_key = style,
                 "help_desc" => theme.help_desc = style,
                 "help_footer" => theme.help_footer = style,
-                "error_title" => theme.error_title = style,
                 "error_text" => theme.error_text = style,
                 "error_border" => theme.error_border = style,
                 "confirm_text" => theme.confirm_text = style,
@@ -909,14 +864,6 @@ impl Theme {
             fmt_style(self.preview_text)
         ));
         output.push_str(&format!(
-            "preview_loading = {}\n",
-            fmt_style(self.preview_loading)
-        ));
-        output.push_str(&format!(
-            "preview_file_label = {}\n",
-            fmt_style(self.preview_file_label)
-        ));
-        output.push_str(&format!(
             "preview_metadata_label = {}\n",
             fmt_style(self.preview_metadata_label)
         ));
@@ -930,21 +877,12 @@ impl Theme {
             "search_input = {}\n",
             fmt_style(self.search_input)
         ));
-        output.push_str(&format!(
-            "search_border = {}\n",
-            fmt_style(self.search_border)
-        ));
-        output.push_str(&format!(
-            "search_title = {}\n",
-            fmt_style(self.search_title)
-        ));
         output.push_str(&format!("help_title = {}\n", fmt_style(self.help_title)));
         output.push_str(&format!("help_header = {}\n", fmt_style(self.help_header)));
         output.push_str(&format!("help_header = {}\n", fmt_style(self.help_header)));
         output.push_str(&format!("help_key = {}\n", fmt_style(self.help_key)));
         output.push_str(&format!("help_desc = {}\n", fmt_style(self.help_desc)));
         output.push_str(&format!("help_footer = {}\n", fmt_style(self.help_footer)));
-        output.push_str(&format!("error_title = {}\n", fmt_style(self.error_title)));
         output.push_str(&format!("error_text = {}\n", fmt_style(self.error_text)));
         output.push_str(&format!(
             "error_border = {}\n",
