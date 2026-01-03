@@ -381,18 +381,8 @@ fn cmd_tui() -> Result<()> {
             }
         }
 
-        // Spawn detached background process to simulate Ctrl-V after delay
-        // setsid creates new session so process survives after clipr exits
-        let delay_ms = app.config.general.paste_delay_ms;
-        let cmd = format!(
-            "setsid sh -c \"sleep {} && wtype -M ctrl v -m ctrl\" >/dev/null 2>&1 &",
-            delay_ms as f64 / 1000.0
-        );
-
-        std::process::Command::new("sh")
-            .arg("-c")
-            .arg(&cmd)
-            .spawn()?;
+        // Simulate Ctrl-V paste after delay
+        backend.paste_from_clipboard(app.config.general.paste_delay_ms)?;
     }
 
     result

@@ -11,11 +11,14 @@ pub trait ClipboardBackend: Send + Sync {
     /// Write image to clipboard (PNG format)
     fn write_image(&self, data: &[u8]) -> Result<()>;
 
-    /// Simulate Ctrl-V to paste from clipboard
+    /// Simulate Ctrl-V to paste from clipboard after a delay
     ///
     /// Used after writing content to clipboard to trigger paste.
     /// Requires wtype (Wayland) or xdotool (X11).
-    fn paste_from_clipboard(&self) -> Result<()>;
+    ///
+    /// # Arguments
+    /// * `delay_ms` - Delay in milliseconds before simulating the paste keystroke
+    fn paste_from_clipboard(&self, delay_ms: u64) -> Result<()>;
 
     /// Check if this backend supports image operations
     fn supports_images(&self) -> bool;

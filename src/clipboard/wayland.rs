@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, anyhow};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use super::backend::ClipboardBackend;
 
@@ -28,6 +28,9 @@ impl ClipboardBackend for WaylandBackend {
             .arg("--type")
             .arg("text/plain")
             .arg(text)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .spawn()
             .context("Failed to spawn wl-copy")?;
 
@@ -45,7 +48,9 @@ impl ClipboardBackend for WaylandBackend {
         let mut child = Command::new("wl-copy")
             .arg("--type")
             .arg("image/png")
-            .stdin(std::process::Stdio::piped())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .spawn()
             .context("Failed to spawn wl-copy for image")?;
 
@@ -66,14 +71,20 @@ impl ClipboardBackend for WaylandBackend {
         Ok(())
     }
 
-    fn paste_from_clipboard(&self) -> Result<()> {
-        // Simulate Ctrl-V using wtype
-        Command::new("wtype")
-            .args(["-M", "ctrl", "v", "-m", "ctrl"])
+    fn paste_from_clipboard(&self, delay_ms: u64) -> Result<()> {
+        // Spawn detached background process to simulate Ctrl-V after delay
+        let cmd = format!(
+            "sleep {} && exec wtype -M ctrl v -m ctrl",
+            delay_ms as f64 / 1000.0
+        );
+
+        Command::new("sh")
+            .arg("-c")
+            .arg(&cmd)
             .spawn()
             .context("Failed to spawn wtype for Ctrl-V. Make sure wtype is installed.")?;
 
-        log::debug!("Simulating Ctrl-V paste via wtype");
+        log::debug!("Scheduled Ctrl-V paste via wtype after {}ms delay", delay_ms);
         Ok(())
     }
 
