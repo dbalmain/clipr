@@ -284,7 +284,7 @@ impl App {
         // Store current theme name before moving config
         let current_theme_name = config.general.theme.clone();
 
-        Ok(App {
+        let mut app = App {
             mode: AppMode::default(),
             history,
             registers,
@@ -316,7 +316,12 @@ impl App {
             flash_rx,
             help_scroll: 0,
             help_max_scroll: 0,
-        })
+        };
+
+        // Request initial image load for the first selected clip (if it's an image)
+        app.request_image_load();
+
+        Ok(app)
     }
 
     /// Poll flash message receiver and add to queue

@@ -72,6 +72,8 @@ impl ClipboardBackend for WaylandBackend {
     }
 
     fn paste_from_clipboard(&self, delay_ms: u64) -> Result<()> {
+        use std::os::unix::process::CommandExt;
+
         // Spawn detached background process to simulate Ctrl-V after delay
         let cmd = format!(
             "sleep {} && exec wtype -M ctrl v -m ctrl",
@@ -81,10 +83,17 @@ impl ClipboardBackend for WaylandBackend {
         Command::new("sh")
             .arg("-c")
             .arg(&cmd)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .process_group(0) // Create new process group to survive window closure
             .spawn()
             .context("Failed to spawn wtype for Ctrl-V. Make sure wtype is installed.")?;
 
-        log::debug!("Scheduled Ctrl-V paste via wtype after {}ms delay", delay_ms);
+        log::debug!(
+            "Scheduled Ctrl-V paste via wtype after {}ms delay",
+            delay_ms
+        );
         Ok(())
     }
 

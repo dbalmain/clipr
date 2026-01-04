@@ -447,9 +447,7 @@ impl Theme {
                 .fg(secondary_text)
                 .add_modifier(Modifier::DIM),
             clip_text: Style::default().fg(fg),
-            clip_text_selected: Style::default()
-                .fg(teal)
-                .add_modifier(Modifier::BOLD),
+            clip_text_selected: Style::default().fg(teal).add_modifier(Modifier::BOLD),
             temp_register: Style::default().fg(orange),
             perm_register: Style::default().fg(green),
             timestamp: Style::default().fg(secondary_text),
@@ -462,22 +460,14 @@ impl Theme {
             preview_metadata_label: Style::default().fg(secondary_text),
             preview_metadata_value: Style::default().fg(fg),
 
-            status_key: Style::default()
-                .fg(purple)
-                .add_modifier(Modifier::BOLD),
+            status_key: Style::default().fg(purple).add_modifier(Modifier::BOLD),
             status_desc: Style::default().fg(secondary_text),
 
             search_input: Style::default().fg(green),
 
-            help_title: Style::default()
-                .fg(purple)
-                .add_modifier(Modifier::BOLD),
-            help_header: Style::default()
-                .fg(yellow)
-                .add_modifier(Modifier::BOLD),
-            help_key: Style::default()
-                .fg(green)
-                .add_modifier(Modifier::BOLD),
+            help_title: Style::default().fg(purple).add_modifier(Modifier::BOLD),
+            help_header: Style::default().fg(yellow).add_modifier(Modifier::BOLD),
+            help_key: Style::default().fg(green).add_modifier(Modifier::BOLD),
             help_desc: Style::default().fg(fg),
             help_footer: Style::default()
                 .fg(secondary_text)
@@ -487,15 +477,11 @@ impl Theme {
             error_border: Style::default().fg(error_color),
 
             confirm_text: Style::default().fg(fg),
-            confirm_key: Style::default()
-                .fg(cyan)
-                .add_modifier(Modifier::BOLD),
+            confirm_key: Style::default().fg(cyan).add_modifier(Modifier::BOLD),
 
             divider_compact: Some("│".to_string()),
             divider_comfortable: Some(" │".to_string()),
-            divider_style: Style::default()
-                .fg(guide_lines)
-                .add_modifier(Modifier::DIM),
+            divider_style: Style::default().fg(guide_lines).add_modifier(Modifier::DIM),
 
             // Flash messages
             flash_error: Style::default()
@@ -504,9 +490,7 @@ impl Theme {
             flash_warn: Style::default().fg(yellow),
             flash_info: Style::default().fg(teal),
             flash_debug: Style::default().fg(secondary_text),
-            flash_trace: Style::default()
-                .fg(guide_lines)
-                .add_modifier(Modifier::DIM),
+            flash_trace: Style::default().fg(guide_lines).add_modifier(Modifier::DIM),
         }
     }
 

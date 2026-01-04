@@ -358,8 +358,11 @@ pub fn render_clip_list(
             frame.render_widget(search_para, header_chunks[0]);
 
             // Render count line with normal background
-            let count_para = Paragraph::new(Line::from(Span::styled(count_text, ctx.theme.clip_list_item_count)))
-                .style(Style::default().bg(ctx.theme.clip_list_bg));
+            let count_para = Paragraph::new(Line::from(Span::styled(
+                count_text,
+                ctx.theme.clip_list_item_count,
+            )))
+            .style(Style::default().bg(ctx.theme.clip_list_bg));
             frame.render_widget(count_para, header_chunks[2]);
         }
         ViewMode::Compact => {
@@ -367,8 +370,8 @@ pub fn render_clip_list(
             let header_chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([
-                    Constraint::Min(1),                          // Search/title (takes remaining space)
-                    Constraint::Length(1),                       // 1-space gap
+                    Constraint::Min(1),    // Search/title (takes remaining space)
+                    Constraint::Length(1), // 1-space gap
                     Constraint::Length(count_text.len() as u16), // Count (fixed width)
                 ])
                 .split(header_area);
@@ -379,8 +382,11 @@ pub fn render_clip_list(
             frame.render_widget(search_para, header_chunks[0]);
 
             // Render count with normal background
-            let count_para = Paragraph::new(Line::from(Span::styled(count_text, ctx.theme.clip_list_item_count)))
-                .style(Style::default().bg(ctx.theme.clip_list_bg));
+            let count_para = Paragraph::new(Line::from(Span::styled(
+                count_text,
+                ctx.theme.clip_list_item_count,
+            )))
+            .style(Style::default().bg(ctx.theme.clip_list_bg));
             frame.render_widget(count_para, header_chunks[2]);
         }
     }
