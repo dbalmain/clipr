@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="60" height="60">
+  <style>
+    :root {
+      --primary: #2a6fb8;
+      --secondary: #9CA3AF;
+    }
+  </style>
+  <!-- Clipboard outline -->
+  <rect x="10" y="8" width="40" height="48" rx="3" ry="3" fill="none" stroke="var(--primary)" stroke-width="3"/>
+  
+  <!-- Clipboard clip at top -->
+  <rect x="19" y="5" width="22" height="7" fill="white"/>
+  <rect x="20" y="4.5" width="20" height="7" rx="2" ry="2" fill="var(--primary)"/>
+  <circle cx="30" cy="6" r="4" fill="var(--primary)"/>
+  <circle cx="30" cy="6" r="2" fill="white"/>
+  
+  <!-- Horizontal lines inside clipboard -->
+  <rect x="17" y="17" width="26" height="8" rx="4" ry="4" fill="var(--primary)"/>
+  <rect x="17" y="29" width="26" height="8" rx="4" ry="4" fill="var(--secondary)"/>
+  <rect x="17" y="41" width="26" height="8" rx="4" ry="4" fill="var(--secondary)"/>
+</svg>
